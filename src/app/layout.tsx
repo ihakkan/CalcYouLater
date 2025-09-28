@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'RoastCalc',
+  title: 'CalcYouLater',
   description: 'A calculator that roasts you.',
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="RoastCalc" />
+        <meta name="apple-mobile-web-app-title" content="CalcYouLater" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-body antialiased">

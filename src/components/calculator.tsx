@@ -132,7 +132,7 @@ const Calculator = () => {
     const result = performCalculation(firstOperand, secondOperand, operator);
     
     // Funny response logic
-    if (Math.random() < 0.7) { // 70% chance of being funny
+    if (Math.random() < 0.9) { // 90% chance of being funny
       const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
       setDisplayValue(funnyResponse);
       setResponse("Psst... tap '=' again to see the real answer.");
@@ -260,7 +260,7 @@ const Calculator = () => {
 
       <Card className="w-full max-w-sm overflow-hidden border-2 shadow-2xl shadow-primary/10">
         <CardHeader className="pb-2">
-          <CardTitle className="font-headline text-primary">RoastCalc</CardTitle>
+          <CardTitle className="font-headline text-primary">CalcYouLater</CardTitle>
           <CardDescription>The calculator that's not afraid to be desi.</CardDescription>
         </CardHeader>
         <CardContent>
