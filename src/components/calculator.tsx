@@ -264,8 +264,8 @@ const Calculator = () => {
           <CardDescription>The calculator that's not afraid to be desi.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 rounded-lg bg-muted p-4 text-right">
-             <p className={cn("font-headline font-bold text-foreground break-all truncate", getDisplayFontSize(fullExpression))} style={{lineHeight: '1.2'}}>
+          <div className="mb-4 rounded-lg bg-muted p-4 text-right flex items-center justify-end h-[76px]">
+             <p className={cn("font-headline font-bold text-foreground break-words", getDisplayFontSize(fullExpression))} style={{lineHeight: '1.2'}}>
               {fullExpression}
             </p>
           </div>
