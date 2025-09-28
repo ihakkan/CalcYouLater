@@ -31,12 +31,48 @@ const Calculator = () => {
   
   const [isFunnyResponse, setIsFunnyResponse] = useState(false);
   const [actualResult, setActualResult] = useState<number | null>(null);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 
   const { toast } = useToast();
+  
+  useEffect(() => {
+    // Initialize AudioContext on the client after the first user interaction to comply with browser autoplay policies.
+    // A separate function `initializeAudio` will be called on the first button press.
+  }, []);
+
+  const playClickSound = useCallback(() => {
+    if (!audioContext) return;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.1);
+  }, [audioContext]);
+  
+  const initializeAudio = () => {
+    if (!audioContext) {
+      const newAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      setAudioContext(newAudioContext);
+    }
+  };
+
+  const handleInteraction = (callback: (...args: any[]) => void) => (...args: any[]) => {
+    initializeAudio();
+    playClickSound();
+    callback(...args);
+  };
 
   const handleDigitInput = useCallback((digit: string) => {
     if (isFunnyResponse) {
-      handleClear();
+      handleClear(false); // don't play sound again
       setDisplayValue(digit);
       return;
     }
@@ -50,7 +86,7 @@ const Calculator = () => {
 
   const handleDecimalInput = useCallback(() => {
     if (isFunnyResponse) {
-      handleClear();
+      handleClear(false);
       setDisplayValue('0.');
       return;
     }
@@ -85,7 +121,7 @@ const Calculator = () => {
 
   const handleOperatorInput = useCallback((nextOperator: Operator) => {
     if (isFunnyResponse) {
-      handleClear();
+      handleClear(false);
     }
     const inputValue = parseFloat(displayValue);
 
@@ -159,7 +195,8 @@ const Calculator = () => {
     setWaitingForSecondOperand(false);
   }, [isFunnyResponse, actualResult, operator, firstOperand, waitingForSecondOperand, displayValue, expression, toast]);
   
-  const handleClear = useCallback(() => {
+  const handleClear = useCallback((playSound = true) => {
+    if (playSound) playClickSound();
     setDisplayValue('0');
     setExpression('');
     setFirstOperand(null);
@@ -168,11 +205,11 @@ const Calculator = () => {
     setResponse(null);
     setIsFunnyResponse(false);
     setActualResult(null);
-  }, []);
+  }, [playClickSound]);
 
   const handleBackspace = useCallback(() => {
     if (isFunnyResponse) {
-      handleClear();
+      handleClear(false);
       return;
     }
     if (waitingForSecondOperand) {
@@ -182,10 +219,14 @@ const Calculator = () => {
       if (prev.length === 1) return '0';
       return prev.slice(0, -1);
     });
-  }, [isFunnyResponse, waitingForSecondOperand]);
+  }, [isFunnyResponse, waitingForSecondOperand, handleClear]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Initialize audio on the first keydown event
+      initializeAudio();
+      
+      let keyHandled = true;
       if (event.key >= '0' && event.key <= '9') {
         handleDigitInput(event.key);
       } else if (event.key === '.') {
@@ -198,7 +239,13 @@ const Calculator = () => {
       } else if (event.key === 'Backspace') {
         handleBackspace();
       } else if (event.key === 'Escape' || event.key.toLowerCase() === 'c') {
-        handleClear();
+        handleClear(false); // keydown doesn't need the extra sound
+      } else {
+        keyHandled = false;
+      }
+      
+      if(keyHandled) {
+        playClickSound();
       }
     };
 
@@ -206,7 +253,7 @@ const Calculator = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleDigitInput, handleDecimalInput, handleOperatorInput, handleEquals, handleBackspace, handleClear]);
+  }, [handleDigitInput, handleDecimalInput, handleOperatorInput, handleEquals, handleBackspace, handleClear, playClickSound]);
 
   const handleRoast = async () => {
     setIsRoastLoading(true);
@@ -251,7 +298,7 @@ const Calculator = () => {
   }
 
   const buttons = [
-    { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
+    { label: 'C', onClick: () => handleClear(false), className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
     { label: '⌫', onClick: handleBackspace, variant: 'accent', icon: Delete },
     { label: '÷', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
@@ -268,7 +315,7 @@ const Calculator = () => {
     { label: '+', onClick: () => handleOperatorInput('+'), variant: 'accent', icon: Plus },
     { label: '0', onClick: () => handleDigitInput('0'), className: 'col-span-2', variant: 'secondary' },
     { label: '.', onClick: handleDecimalInput, variant: 'secondary' },
-    { label: '=', onClick: handleEquals, variant: 'primary' },
+    { label: '=', onClick: handleEquals, variant: 'primary', className: 'bg-primary text-primary-foreground' },
   ];
 
   return (
@@ -312,7 +359,7 @@ const Calculator = () => {
                 return (
                   <Button
                     key={btn.label}
-                    onClick={btn.onClick}
+                    onClick={handleInteraction(btn.onClick)}
                     className={cn('h-16 text-2xl font-bold', btn.className)}
                     variant={(btn.variant as any) || 'default'}
                     aria-label={btn.label}
@@ -322,7 +369,7 @@ const Calculator = () => {
                 )
              })}
           </div>
-          <Button onClick={handleRoast} disabled={isRoastLoading || !canRoast} className="w-full mt-4 h-14 text-lg font-bold" variant="outline">
+          <Button onClick={handleInteraction(handleRoast)} disabled={isRoastLoading || !canRoast} className="w-full mt-4 h-14 text-lg font-bold" variant="outline">
             <Bot className="mr-2 h-6 w-6"/> {isRoastLoading ? 'Spilling the tea...' : 'Spill the AI Chai'}
           </Button>
         </CardContent>
@@ -332,5 +379,3 @@ const Calculator = () => {
 };
 
 export default Calculator;
-
-    
