@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Divide, Minus, Plus, X, Bot, Delete } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ const Calculator = () => {
 
   const { toast } = useToast();
 
-  const handleDigitInput = (digit: string) => {
+  const handleDigitInput = useCallback((digit: string) => {
     if (isFunnyResponse) {
       handleClear();
       setDisplayValue(digit);
@@ -46,9 +46,9 @@ const Calculator = () => {
     } else {
       setDisplayValue(displayValue === '0' ? digit : displayValue + digit);
     }
-  };
+  }, [isFunnyResponse, waitingForSecondOperand, displayValue]);
 
-  const handleDecimalInput = () => {
+  const handleDecimalInput = useCallback(() => {
     if (isFunnyResponse) {
       handleClear();
       setDisplayValue('0.');
@@ -62,7 +62,7 @@ const Calculator = () => {
     if (!displayValue.includes('.')) {
       setDisplayValue(displayValue + '.');
     }
-  };
+  }, [isFunnyResponse, waitingForSecondOperand, displayValue]);
 
   const performCalculation = (first: number, second: number, op: Operator): number => {
     switch (op) {
@@ -73,8 +73,17 @@ const Calculator = () => {
       default: return second;
     }
   };
+  
+  const checkAndSetResponse = (result: number) => {
+    if (isFunnyResponse) return;
+    if (easterEggJokes[result]) {
+      setResponse(easterEggJokes[result]);
+    } else {
+      setResponse(getRandomJoke());
+    }
+  }
 
-  const handleOperatorInput = (nextOperator: Operator) => {
+  const handleOperatorInput = useCallback((nextOperator: Operator) => {
     if (isFunnyResponse) {
       handleClear();
     }
@@ -100,9 +109,9 @@ const Calculator = () => {
 
     setWaitingForSecondOperand(true);
     setOperator(nextOperator);
-  };
+  }, [displayValue, firstOperand, isFunnyResponse, operator, waitingForSecondOperand]);
 
-  const handleEquals = () => {
+  const handleEquals = useCallback(() => {
     if (isFunnyResponse && actualResult !== null) {
       setDisplayValue(String(actualResult));
       setExpression('');
@@ -131,14 +140,12 @@ const Calculator = () => {
     
     const result = performCalculation(firstOperand, secondOperand, operator);
     
-    // Funny response logic
-    if (Math.random() < 0.9) { // 90% chance of being funny
+    if (Math.random() < 0.9) {
       const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
       setDisplayValue(funnyResponse);
       setResponse("Psst... tap '=' again to see the real answer.");
       setIsFunnyResponse(true);
       setActualResult(result);
-      // Keep the expression as is before hitting equals
       setExpression(expression + displayValue);
       return;
     }
@@ -150,18 +157,9 @@ const Calculator = () => {
     checkAndSetResponse(result);
     setOperator(null);
     setWaitingForSecondOperand(false);
-  };
+  }, [isFunnyResponse, actualResult, operator, firstOperand, waitingForSecondOperand, displayValue, expression, toast]);
   
-  const checkAndSetResponse = (result: number) => {
-    if (isFunnyResponse) return; // Don't show regular jokes during funny flow
-    if (easterEggJokes[result]) {
-      setResponse(easterEggJokes[result]);
-    } else {
-      setResponse(getRandomJoke());
-    }
-  }
-
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setDisplayValue('0');
     setExpression('');
     setFirstOperand(null);
@@ -170,9 +168,9 @@ const Calculator = () => {
     setResponse(null);
     setIsFunnyResponse(false);
     setActualResult(null);
-  };
+  }, []);
 
-  const handleBackspace = () => {
+  const handleBackspace = useCallback(() => {
     if (isFunnyResponse) {
       handleClear();
       return;
@@ -184,7 +182,31 @@ const Calculator = () => {
       if (prev.length === 1) return '0';
       return prev.slice(0, -1);
     });
-  };
+  }, [isFunnyResponse, waitingForSecondOperand]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key >= '0' && event.key <= '9') {
+        handleDigitInput(event.key);
+      } else if (event.key === '.') {
+        handleDecimalInput();
+      } else if (['+', '-', '*', '/'].includes(event.key)) {
+        handleOperatorInput(event.key as Operator);
+      } else if (event.key === 'Enter' || event.key === '=') {
+        event.preventDefault(); // Prevent form submission if any
+        handleEquals();
+      } else if (event.key === 'Backspace') {
+        handleBackspace();
+      } else if (event.key === 'Escape' || event.key.toLowerCase() === 'c') {
+        handleClear();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleDigitInput, handleDecimalInput, handleOperatorInput, handleEquals, handleBackspace, handleClear]);
 
   const handleRoast = async () => {
     setIsRoastLoading(true);
@@ -310,3 +332,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
