@@ -58,7 +58,7 @@ const Calculator = () => {
 
     if (operator && waitingForSecondOperand) {
         setOperator(nextOperator);
-        setExpression(prev => prev.slice(0, -1) + ` ${nextOperator} `);
+        setExpression(prev => prev.slice(0, -2) + ` ${nextOperator} `);
         return;
     }
 
@@ -149,7 +149,7 @@ const Calculator = () => {
   
   const fullExpression = useMemo(() => {
     if (expression === '') return displayValue;
-    if (waitingForSecondOperand) return expression;
+    if (waitingForSecondOperand) return expression.trim();
     return expression + displayValue;
   }, [expression, displayValue, waitingForSecondOperand]);
 
@@ -175,6 +175,28 @@ const Calculator = () => {
 
   return (
     <>
+      <div className="h-24 mb-4">
+        {(response || isRoastLoading) && (
+            <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-90 duration-500 fill-mode-both bg-accent/20 border-accent/50">
+                <CardFooter className="p-3">
+                    {isRoastLoading ? (
+                        <div className="flex items-center space-x-3 w-full">
+                            <Skeleton className="h-10 w-10 rounded-full bg-accent/30" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[200px] bg-muted" />
+                                <Skeleton className="h-4 w-[150px] bg-muted" />
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="font-headline text-center text-lg font-medium text-accent-foreground/90 w-full">
+                            &ldquo;{response}&rdquo;
+                        </p>
+                    )}
+                </CardFooter>
+            </Card>
+        )}
+      </div>
+
       <Card className="w-full max-w-sm overflow-hidden border-2 shadow-2xl shadow-primary/10">
         <CardHeader className="pb-2">
           <CardTitle className="font-headline text-primary">RoastCalc</CardTitle>
@@ -207,26 +229,6 @@ const Calculator = () => {
           </Button>
         </CardContent>
       </Card>
-      
-      {(response || isRoastLoading) && (
-        <Card className="mt-4 w-full max-w-sm animate-in fade-in-50 slide-in-from-bottom-5">
-            <CardFooter className="p-4">
-                {isRoastLoading ? (
-                    <div className="flex items-center space-x-3 w-full">
-                        <Skeleton className="h-10 w-10 rounded-full bg-accent/30" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-[200px] bg-muted" />
-                            <Skeleton className="h-4 w-[150px] bg-muted" />
-                        </div>
-                    </div>
-                ) : (
-                    <p className="font-body text-center text-base italic text-muted-foreground w-full">
-                        &ldquo;{response}&rdquo;
-                    </p>
-                )}
-            </CardFooter>
-        </Card>
-      )}
     </>
   );
 };
