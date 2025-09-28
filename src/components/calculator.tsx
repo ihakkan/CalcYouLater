@@ -112,6 +112,7 @@ const Calculator = () => {
       setIsFunnyResponse(false);
       setOperator(null);
       setWaitingForSecondOperand(false);
+      setResponse(getRandomJoke());
       return;
     }
 
@@ -137,7 +138,8 @@ const Calculator = () => {
       setResponse("Psst... tap '=' again to see the real answer.");
       setIsFunnyResponse(true);
       setActualResult(result);
-      setExpression(fullExpression + ' =');
+      // Keep the expression as is before hitting equals
+      setExpression(expression + displayValue);
       return;
     }
 
@@ -174,7 +176,7 @@ const Calculator = () => {
     setIsRoastLoading(true);
     setResponse(null);
     try {
-      const result = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
+      const result = isFunnyResponse && actualResult ? actualResult : firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
       if (isNaN(result)) {
         setResponse("Bro, give me a number first. Aise kaise?");
         return;
@@ -193,15 +195,14 @@ const Calculator = () => {
   };
 
   const canRoast = useMemo(() => {
-    if (isFunnyResponse) return false;
     const value = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
     return !isNaN(value);
-  }, [displayValue, firstOperand, waitingForSecondOperand, isFunnyResponse]);
+  }, [displayValue, firstOperand, waitingForSecondOperand]);
   
   const fullExpression = useMemo(() => {
+    if(isFunnyResponse) return displayValue;
     if (expression === '') return displayValue;
     if (waitingForSecondOperand) return expression.trim();
-    if(isFunnyResponse) return expression;
     return expression + displayValue;
   }, [expression, displayValue, waitingForSecondOperand, isFunnyResponse]);
 
