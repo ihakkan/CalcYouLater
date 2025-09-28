@@ -205,6 +205,14 @@ const Calculator = () => {
     if (waitingForSecondOperand) return expression.trim();
     return expression + displayValue;
   }, [expression, displayValue, waitingForSecondOperand, isFunnyResponse]);
+  
+  const getDisplayFontSize = (text: string) => {
+    const length = text.length;
+    if (length > 20) return 'text-2xl';
+    if (length > 15) return 'text-3xl';
+    if (length > 10) return 'text-4xl';
+    return 'text-5xl';
+  }
 
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
@@ -257,7 +265,7 @@ const Calculator = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right">
-             <p className={cn("font-headline text-5xl font-bold text-foreground break-all truncate", { 'text-2xl': isFunnyResponse })} style={{lineHeight: '1.2'}}>
+             <p className={cn("font-headline font-bold text-foreground break-all truncate", getDisplayFontSize(fullExpression))} style={{lineHeight: '1.2'}}>
               {fullExpression}
             </p>
           </div>
