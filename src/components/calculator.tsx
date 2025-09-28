@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Divide, Minus, Plus, X, Bot, RotateCw } from 'lucide-react';
+import { Divide, Minus, Plus, X, Bot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getAIRoast } from '@/app/actions';
@@ -14,11 +14,11 @@ type Operator = '+' | '-' | '*' | '/';
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
-  const [expression, setExpression] = useState('');
   const [firstOperand, setFirstOperand] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator | null>(null);
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
-  
+  const [expression, setExpression] = useState('');
+
   const [response, setResponse] = useState<string | null>(null);
   const [isRoastLoading, setIsRoastLoading] = useState(false);
   const { toast } = useToast();
@@ -57,20 +57,20 @@ const Calculator = () => {
     const inputValue = parseFloat(displayValue);
 
     if (operator && waitingForSecondOperand) {
-      setOperator(nextOperator);
-      setExpression(prev => prev.slice(0, -2) + ` ${nextOperator} `);
-      return;
+        setOperator(nextOperator);
+        setExpression(prev => prev.slice(0, -1) + ` ${nextOperator} `);
+        return;
     }
-    
-    setExpression(prev => `${prev} ${displayValue} ${nextOperator}`);
 
     if (firstOperand === null) {
       setFirstOperand(inputValue);
+      setExpression(`${displayValue} ${nextOperator} `);
     } else if (operator) {
       const result = performCalculation(firstOperand, inputValue, operator);
       const resultString = String(result);
       setDisplayValue(resultString);
       setFirstOperand(result);
+      setExpression(`${resultString} ${nextOperator} `);
       checkAndSetResponse(result);
     }
 
@@ -79,7 +79,7 @@ const Calculator = () => {
   };
 
   const handleEquals = () => {
-    if (operator === null || firstOperand === null) return;
+    if (operator === null || firstOperand === null || waitingForSecondOperand) return;
     
     const secondOperand = parseFloat(displayValue);
 
@@ -97,10 +97,10 @@ const Calculator = () => {
 
     setDisplayValue(resultString);
     setExpression('');
-    setFirstOperand(result); // Allow chaining operations
+    setFirstOperand(null); 
     checkAndSetResponse(result);
     setOperator(null);
-    setWaitingForSecondOperand(true);
+    setWaitingForSecondOperand(false);
   };
   
   const checkAndSetResponse = (result: number) => {
@@ -147,6 +147,12 @@ const Calculator = () => {
     return !isNaN(value);
   }, [displayValue, firstOperand, waitingForSecondOperand]);
   
+  const fullExpression = useMemo(() => {
+    if (expression === '') return displayValue;
+    if (waitingForSecondOperand) return expression;
+    return expression + displayValue;
+  }, [expression, displayValue, waitingForSecondOperand]);
+
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
     { label: '*', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
@@ -176,11 +182,8 @@ const Calculator = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right">
-            <div className="h-6 text-muted-foreground text-xl break-all truncate text-right">
-                {expression || ' '}
-            </div>
-            <p className="font-headline text-5xl font-bold text-foreground break-all" style={{lineHeight: '1.2'}}>
-              {parseFloat(displayValue).toLocaleString('en-US', {maximumFractionDigits: 8})}
+            <p className="font-headline text-5xl font-bold text-foreground break-all truncate" style={{lineHeight: '1.2'}}>
+              {fullExpression}
             </p>
           </div>
           <div className="grid grid-cols-4 grid-rows-5 gap-2">
