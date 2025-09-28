@@ -132,7 +132,7 @@ const Calculator = () => {
     const result = performCalculation(firstOperand, secondOperand, operator);
     
     // Funny response logic
-    if (Math.random() < 0.3) { // 30% chance of being funny
+    if (Math.random() < 0.7) { // 70% chance of being funny
       const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
       setDisplayValue(funnyResponse);
       setResponse("Psst... tap '=' again to see the real answer.");
