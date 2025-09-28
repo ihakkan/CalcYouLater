@@ -14,6 +14,7 @@ type Operator = '+' | '-' | '*' | '/';
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
+  const [expression, setExpression] = useState('');
   const [firstOperand, setFirstOperand] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator | null>(null);
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
@@ -57,8 +58,11 @@ const Calculator = () => {
 
     if (operator && waitingForSecondOperand) {
       setOperator(nextOperator);
+      setExpression(prev => prev.slice(0, -2) + ` ${nextOperator} `);
       return;
     }
+    
+    setExpression(prev => `${prev} ${displayValue} ${nextOperator}`);
 
     if (firstOperand === null) {
       setFirstOperand(inputValue);
@@ -92,6 +96,7 @@ const Calculator = () => {
     const resultString = String(result);
 
     setDisplayValue(resultString);
+    setExpression('');
     setFirstOperand(result); // Allow chaining operations
     checkAndSetResponse(result);
     setOperator(null);
@@ -108,6 +113,7 @@ const Calculator = () => {
 
   const handleClear = () => {
     setDisplayValue('0');
+    setExpression('');
     setFirstOperand(null);
     setOperator(null);
     setWaitingForSecondOperand(false);
@@ -118,7 +124,7 @@ const Calculator = () => {
     setIsRoastLoading(true);
     setResponse(null);
     try {
-      const result = firstOperand !== null ? firstOperand : parseFloat(displayValue);
+      const result = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
       if (isNaN(result)) {
         setResponse("Give me a number to work with first, genius.");
         return;
@@ -137,11 +143,12 @@ const Calculator = () => {
   };
 
   const canRoast = useMemo(() => {
-    return !isNaN(parseFloat(displayValue)) && !waitingForSecondOperand;
-  }, [displayValue, waitingForSecondOperand]);
+    const value = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
+    return !isNaN(value);
+  }, [displayValue, firstOperand, waitingForSecondOperand]);
   
   const buttons = [
-    { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2', icon: RotateCw },
+    { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
     { label: '*', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
     { label: '/', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
@@ -169,6 +176,9 @@ const Calculator = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right">
+            <div className="h-6 text-muted-foreground text-xl break-all truncate text-right">
+                {expression || ' '}
+            </div>
             <p className="font-headline text-5xl font-bold text-foreground break-all" style={{lineHeight: '1.2'}}>
               {parseFloat(displayValue).toLocaleString('en-US', {maximumFractionDigits: 8})}
             </p>
@@ -181,7 +191,7 @@ const Calculator = () => {
                     key={btn.label}
                     onClick={btn.onClick}
                     className={cn('h-16 text-2xl font-bold', btn.className)}
-                    variant={btn.variant as any || 'default'}
+                    variant={(btn.variant as any) || 'default'}
                     aria-label={btn.label}
                   >
                    {ButtonIcon ? <ButtonIcon className="h-7 w-7"/> : btn.label}
