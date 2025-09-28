@@ -12,18 +12,34 @@ import { cn } from '@/lib/utils';
 
 type Operator = '+' | '-' | '*' | '/';
 
+const funnyResponses = [
+  "Umm, 67? Maybe 89?",
+  "Hello World!",
+  "Try again, use your brain kid.",
+  "Do I look like I know?",
+  "42. The answer is always 42.",
+];
+
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
   const [firstOperand, setFirstOperand] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator | null>(null);
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [expression, setExpression] = useState('');
-
   const [response, setResponse] = useState<string | null>(null);
   const [isRoastLoading, setIsRoastLoading] = useState(false);
+  
+  const [isFunnyResponse, setIsFunnyResponse] = useState(false);
+  const [actualResult, setActualResult] = useState<number | null>(null);
+
   const { toast } = useToast();
 
   const handleDigitInput = (digit: string) => {
+    if (isFunnyResponse) {
+      handleClear();
+      setDisplayValue(digit);
+      return;
+    }
     if (waitingForSecondOperand) {
       setDisplayValue(digit);
       setWaitingForSecondOperand(false);
@@ -33,6 +49,11 @@ const Calculator = () => {
   };
 
   const handleDecimalInput = () => {
+    if (isFunnyResponse) {
+      handleClear();
+      setDisplayValue('0.');
+      return;
+    }
     if (waitingForSecondOperand) {
       setDisplayValue('0.');
       setWaitingForSecondOperand(false);
@@ -54,6 +75,9 @@ const Calculator = () => {
   };
 
   const handleOperatorInput = (nextOperator: Operator) => {
+    if (isFunnyResponse) {
+      handleClear();
+    }
     const inputValue = parseFloat(displayValue);
 
     if (operator && waitingForSecondOperand) {
@@ -79,6 +103,18 @@ const Calculator = () => {
   };
 
   const handleEquals = () => {
+    if (isFunnyResponse && actualResult !== null) {
+      setDisplayValue(String(actualResult));
+      setExpression('');
+      setFirstOperand(actualResult);
+      checkAndSetResponse(actualResult);
+      setActualResult(null);
+      setIsFunnyResponse(false);
+      setOperator(null);
+      setWaitingForSecondOperand(false);
+      return;
+    }
+
     if (operator === null || firstOperand === null || waitingForSecondOperand) return;
     
     const secondOperand = parseFloat(displayValue);
@@ -93,8 +129,19 @@ const Calculator = () => {
     }
     
     const result = performCalculation(firstOperand, secondOperand, operator);
-    const resultString = String(result);
+    
+    // Funny response logic
+    if (Math.random() < 0.3) { // 30% chance of being funny
+      const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
+      setDisplayValue(funnyResponse);
+      setResponse("Psst... tap '=' again to see the real answer.");
+      setIsFunnyResponse(true);
+      setActualResult(result);
+      setExpression(fullExpression + ' =');
+      return;
+    }
 
+    const resultString = String(result);
     setDisplayValue(resultString);
     setExpression('');
     setFirstOperand(null); 
@@ -104,6 +151,7 @@ const Calculator = () => {
   };
   
   const checkAndSetResponse = (result: number) => {
+    if (isFunnyResponse) return; // Don't show regular jokes during funny flow
     if (easterEggJokes[result]) {
       setResponse(easterEggJokes[result]);
     } else {
@@ -118,6 +166,8 @@ const Calculator = () => {
     setOperator(null);
     setWaitingForSecondOperand(false);
     setResponse(null);
+    setIsFunnyResponse(false);
+    setActualResult(null);
   };
 
   const handleRoast = async () => {
@@ -143,20 +193,22 @@ const Calculator = () => {
   };
 
   const canRoast = useMemo(() => {
+    if (isFunnyResponse) return false;
     const value = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
     return !isNaN(value);
-  }, [displayValue, firstOperand, waitingForSecondOperand]);
+  }, [displayValue, firstOperand, waitingForSecondOperand, isFunnyResponse]);
   
   const fullExpression = useMemo(() => {
     if (expression === '') return displayValue;
     if (waitingForSecondOperand) return expression.trim();
+    if(isFunnyResponse) return expression;
     return expression + displayValue;
-  }, [expression, displayValue, waitingForSecondOperand]);
+  }, [expression, displayValue, waitingForSecondOperand, isFunnyResponse]);
 
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
-    { label: '×', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
     { label: '÷', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
+    { label: '×', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
     { label: '8', onClick: () => handleDigitInput('8'), variant: 'secondary' },
     { label: '9', onClick: () => handleDigitInput('9'), variant: 'secondary' },
@@ -204,7 +256,7 @@ const Calculator = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right">
-            <p className="font-headline text-5xl font-bold text-foreground break-all truncate" style={{lineHeight: '1.2'}}>
+             <p className={cn("font-headline text-5xl font-bold text-foreground break-all truncate", { 'text-2xl': isFunnyResponse })} style={{lineHeight: '1.2'}}>
               {fullExpression}
             </p>
           </div>
@@ -234,3 +286,5 @@ const Calculator = () => {
 };
 
 export default Calculator;
+
+    
