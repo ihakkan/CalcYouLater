@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Divide, Minus, Plus, X, Bot } from 'lucide-react';
+import { Divide, Minus, Plus, X, Bot, Delete } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getAIRoast } from '@/app/actions';
@@ -172,6 +172,20 @@ const Calculator = () => {
     setActualResult(null);
   };
 
+  const handleBackspace = () => {
+    if (isFunnyResponse) {
+      handleClear();
+      return;
+    }
+    if (waitingForSecondOperand) {
+      return;
+    }
+    setDisplayValue(prev => {
+      if (prev.length === 1) return '0';
+      return prev.slice(0, -1);
+    });
+  };
+
   const handleRoast = async () => {
     setIsRoastLoading(true);
     setResponse(null);
@@ -216,22 +230,23 @@ const Calculator = () => {
 
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
+    { label: '⌫', onClick: handleBackspace, variant: 'accent', icon: Delete },
     { label: '÷', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
-    { label: '×', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
     { label: '8', onClick: () => handleDigitInput('8'), variant: 'secondary' },
     { label: '9', onClick: () => handleDigitInput('9'), variant: 'secondary' },
-    { label: '-', onClick: () => handleOperatorInput('-'), variant: 'accent', icon: Minus },
+    { label: '×', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
     { label: '4', onClick: () => handleDigitInput('4'), variant: 'secondary' },
     { label: '5', onClick: () => handleDigitInput('5'), variant: 'secondary' },
     { label: '6', onClick: () => handleDigitInput('6'), variant: 'secondary' },
-    { label: '+', onClick: () => handleOperatorInput('+'), variant: 'accent', icon: Plus },
+    { label: '-', onClick: () => handleOperatorInput('-'), variant: 'accent', icon: Minus },
     { label: '1', onClick: () => handleDigitInput('1'), variant: 'secondary' },
     { label: '2', onClick: () => handleDigitInput('2'), variant: 'secondary' },
     { label: '3', onClick: () => handleDigitInput('3'), variant: 'secondary' },
-    { label: '=', onClick: handleEquals, className: 'row-span-2', variant: 'primary' },
+    { label: '+', onClick: () => handleOperatorInput('+'), variant: 'accent', icon: Plus },
     { label: '0', onClick: () => handleDigitInput('0'), className: 'col-span-2', variant: 'secondary' },
     { label: '.', onClick: handleDecimalInput, variant: 'secondary' },
+    { label: '=', onClick: handleEquals, variant: 'primary' },
   ];
 
   return (
