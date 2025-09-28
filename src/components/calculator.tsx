@@ -87,7 +87,7 @@ const Calculator = () => {
         toast({
             variant: "destructive",
             title: "Math Error",
-            description: "You can't divide by zero, you silly goose.",
+            description: "Yaar, you can't divide by zero. Pagal ho kya?",
         });
         return;
     }
@@ -126,7 +126,7 @@ const Calculator = () => {
     try {
       const result = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
       if (isNaN(result)) {
-        setResponse("Give me a number to work with first, genius.");
+        setResponse("Bro, give me a number first. Aise kaise?");
         return;
       }
       const roast = await getAIRoast({ calculationResult: result });
@@ -135,7 +135,7 @@ const Calculator = () => {
       toast({
         variant: "destructive",
         title: "AI Overload",
-        description: "The AI is too tired to roast you. Try again later.",
+        description: "AI is sleeping. No roasts for you.",
       });
     } finally {
       setIsRoastLoading(false);
@@ -155,8 +155,8 @@ const Calculator = () => {
 
   const buttons = [
     { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2' },
-    { label: '*', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
-    { label: '/', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
+    { label: '×', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
+    { label: '÷', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
     { label: '8', onClick: () => handleDigitInput('8'), variant: 'secondary' },
     { label: '9', onClick: () => handleDigitInput('9'), variant: 'secondary' },
@@ -200,7 +200,7 @@ const Calculator = () => {
       <Card className="w-full max-w-sm overflow-hidden border-2 shadow-2xl shadow-primary/10">
         <CardHeader className="pb-2">
           <CardTitle className="font-headline text-primary">RoastCalc</CardTitle>
-          <CardDescription>Your sassy calculating companion.</CardDescription>
+          <CardDescription>The calculator that's not afraid to be desi.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right">
@@ -225,7 +225,7 @@ const Calculator = () => {
              })}
           </div>
           <Button onClick={handleRoast} disabled={isRoastLoading || !canRoast} className="w-full mt-4 h-14 text-lg font-bold" variant="outline">
-            <Bot className="mr-2 h-6 w-6"/> {isRoastLoading ? 'Thinking of a good one...' : 'Get Roasted by AI'}
+            <Bot className="mr-2 h-6 w-6"/> {isRoastLoading ? 'Spilling the tea...' : 'Spill the AI Chai'}
           </Button>
         </CardContent>
       </Card>

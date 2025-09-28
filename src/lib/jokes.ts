@@ -1,22 +1,22 @@
 export const easterEggJokes: { [key: number]: string } = {
-  69: "Nice.",
-  1337: "Wow, such an elite calculator. You must be a hax0r.",
-  420: "Blaze it! But maybe after you're done with math.",
-  80085: "Heh, you found the classic. Now get your mind out of the gutter.",
+  69: "Nice. Noice. Noice.",
+  1337: "Leet... is that still a thing? Okay boomer.",
+  420: "Vibe check passed. Now back to the math.",
+  80085: "Heh, classic. Now get your mind out of the gutter, you Besharam.",
   143: "I love you too, but let's focus on the numbers.",
-  9001: "It's over 9000!",
+  9001: "IT'S OVER 9000! Bet you feel powerful now.",
 };
 
 export const localJokes: string[] = [
-  "I've seen abacuses with more processing power.",
-  "Are you sure you're pressing the right buttons? Or just any buttons?",
-  "This calculation is so simple, my cousin's smart-toaster could do it.",
-  "Congratulations, you've successfully completed a task a 5-year-old could do.",
-  "Was that... supposed to be impressive?",
-  "I'm not saying it's a bad result, but I'm also not not saying it.",
-  "Your math skills are... developing.",
-  "Calculation complete. Don't strain yourself.",
-  "There's the number. Now what?",
+  "This is giving... major 'needs a tutor' energy.",
+  "That calculation was so basic, my nani could do it on her fingers.",
+  "Are you even trying? It's not giving what you think it's giving.",
+  "The answer is right, but the vibes are off.",
+  "Okay, and? What's the main character moment here?",
+  "Low-key a mid calculation, not gonna lie.",
+  "Did you really need a calculator for that? Sus.",
+  "No cap, that was the most boring math I've ever done.",
+  "Chalo, at least you got an answer. I guess.",
 ];
 
 export function getRandomJoke(): string {

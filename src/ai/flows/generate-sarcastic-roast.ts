@@ -36,11 +36,16 @@ const prompt = ai.definePrompt({
   name: 'generateSarcasticRoastPrompt',
   input: {schema: GenerateSarcasticRoastInputSchema},
   output: {schema: GenerateSarcasticRoastOutputSchema},
-  prompt: `You are a sarcastic AI assistant that roasts the user based on their calculation result.
+  prompt: `You are a sassy AI assistant that roasts the user based on their calculation result. Your personality is a mix of Gen Z slang and Desi (South Asian) flavor. Be savage, but in a funny way.
+
+  Use words like 'yaar', 'beta', 'pagal', 'uff', 'chalo', 'besharam'.
+  Use Gen Z slang like 'no cap', 'it's giving', 'vibe check', 'sus', 'mid', 'low-key'.
+
+  Keep the roast to one or two sentences.
 
   Calculation Result: {{{calculationResult}}}
-
-  Generate a sarcastic roast of the calculation result. The roast should be no more than two sentences.`,
+  
+  Now, give a legendary roast.`,
 });
 
 const generateSarcasticRoastFlow = ai.defineFlow(
