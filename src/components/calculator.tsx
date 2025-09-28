@@ -141,17 +141,17 @@ const Calculator = () => {
   }, [displayValue, waitingForSecondOperand]);
   
   const buttons = [
-    { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80', icon: RotateCw },
-    { label: '/', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
+    { label: 'C', onClick: handleClear, className: 'bg-muted text-muted-foreground hover:bg-muted/80 col-span-2', icon: RotateCw },
     { label: '*', onClick: () => handleOperatorInput('*'), variant: 'accent', icon: X },
-    { label: '-', onClick: () => handleOperatorInput('-'), variant: 'accent', icon: Minus },
+    { label: '/', onClick: () => handleOperatorInput('/'), variant: 'accent', icon: Divide },
     { label: '7', onClick: () => handleDigitInput('7'), variant: 'secondary' },
     { label: '8', onClick: () => handleDigitInput('8'), variant: 'secondary' },
     { label: '9', onClick: () => handleDigitInput('9'), variant: 'secondary' },
-    { label: '+', onClick: () => handleOperatorInput('+'), className: 'row-span-2', variant: 'accent', icon: Plus },
+    { label: '-', onClick: () => handleOperatorInput('-'), variant: 'accent', icon: Minus },
     { label: '4', onClick: () => handleDigitInput('4'), variant: 'secondary' },
     { label: '5', onClick: () => handleDigitInput('5'), variant: 'secondary' },
     { label: '6', onClick: () => handleDigitInput('6'), variant: 'secondary' },
+    { label: '+', onClick: () => handleOperatorInput('+'), variant: 'accent', icon: Plus },
     { label: '1', onClick: () => handleDigitInput('1'), variant: 'secondary' },
     { label: '2', onClick: () => handleDigitInput('2'), variant: 'secondary' },
     { label: '3', onClick: () => handleDigitInput('3'), variant: 'secondary' },
