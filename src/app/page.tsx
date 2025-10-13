@@ -8,7 +8,7 @@ export default function Home() {
         <Calculator />
       </div>
       <footer className="w-full text-center text-sm text-muted-foreground">
-        If you don't like it just hate him{' '}
+        Got a problem with the attitude? Complain to{' '}
         <a
           href="https://hakkan.is-a.dev/"
           target="_blank"
@@ -17,6 +17,7 @@ export default function Home() {
         >
           Hakkan
         </a>
+        .
       </footer>
     </main>
   );
