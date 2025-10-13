@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { easterEggJokes, getRandomJoke } from '@/lib/jokes';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import InstallPrompt from '@/components/install-prompt';
 
 type Operator = '+' | '-' | '*' | '/';
 
@@ -290,11 +291,12 @@ const Calculator = () => {
 
   return (
     <>
+      <InstallPrompt />
       <div className="h-24 mb-4">
         {response && (
-            <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-90 duration-500 fill-mode-both bg-accent/20 border-accent/50">
+            <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-90 duration-500 fill-mode-both bg-card border-primary">
                 <CardFooter className="p-3">
-                    <p className="font-headline text-center text-lg font-medium text-accent-foreground/90 w-full">
+                    <p className="font-headline text-center text-lg font-medium text-primary w-full">
                         &ldquo;{response}&rdquo;
                     </p>
                 </CardFooter>
