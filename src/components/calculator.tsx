@@ -167,7 +167,7 @@ const Calculator = () => {
         toast({
             variant: "destructive",
             title: "Math Error",
-            description: "Yaar, you can't divide by zero. Pagal ho kya?",
+            description: "You can't divide by zero. Are you trying to break the universe?",
         });
         return;
     }
@@ -307,7 +307,7 @@ const Calculator = () => {
       <Card className="w-full max-w-sm overflow-hidden border-2 shadow-2xl shadow-primary/10">
         <CardHeader className="pb-2">
           <CardTitle className="font-headline text-primary">CalcYouLater</CardTitle>
-          <CardDescription>The calculator that's not afraid to be desi.</CardDescription>
+          <CardDescription>The calculator with an attitude.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right flex items-center justify-end h-[76px]">
