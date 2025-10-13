@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Divide, Minus, Plus, X, Bot, Delete } from 'lucide-react';
+import { Divide, Minus, Plus, X, Delete } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getAIRoast } from '@/app/actions';
 import { easterEggJokes, getRandomJoke } from '@/lib/jokes';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 
@@ -27,7 +25,6 @@ const Calculator = () => {
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [expression, setExpression] = useState('');
   const [response, setResponse] = useState<string | null>(null);
-  const [isRoastLoading, setIsRoastLoading] = useState(false);
   
   const [isFunnyResponse, setIsFunnyResponse] = useState(false);
   const [actualResult, setActualResult] = useState<number | null>(null);
@@ -254,33 +251,6 @@ const Calculator = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleDigitInput, handleDecimalInput, handleOperatorInput, handleEquals, handleBackspace, handleClear, playClickSound]);
-
-  const handleRoast = async () => {
-    setIsRoastLoading(true);
-    setResponse(null);
-    try {
-      const result = isFunnyResponse && actualResult ? actualResult : firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
-      if (isNaN(result)) {
-        setResponse("Bro, give me a number first. Aise kaise?");
-        return;
-      }
-      const roast = await getAIRoast({ calculationResult: result });
-      setResponse(roast);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "AI Overload",
-        description: "AI is sleeping. No roasts for you.",
-      });
-    } finally {
-      setIsRoastLoading(false);
-    }
-  };
-
-  const canRoast = useMemo(() => {
-    const value = firstOperand !== null && waitingForSecondOperand ? firstOperand : parseFloat(displayValue);
-    return !isNaN(value);
-  }, [displayValue, firstOperand, waitingForSecondOperand]);
   
   const fullExpression = useMemo(() => {
     if(isFunnyResponse) return displayValue;
@@ -321,22 +291,12 @@ const Calculator = () => {
   return (
     <>
       <div className="h-24 mb-4">
-        {(response || isRoastLoading) && (
+        {response && (
             <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-90 duration-500 fill-mode-both bg-accent/20 border-accent/50">
                 <CardFooter className="p-3">
-                    {isRoastLoading ? (
-                        <div className="flex items-center space-x-3 w-full">
-                            <Skeleton className="h-10 w-10 rounded-full bg-accent/30" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[200px] bg-muted" />
-                                <Skeleton className="h-4 w-[150px] bg-muted" />
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="font-headline text-center text-lg font-medium text-accent-foreground/90 w-full">
-                            &ldquo;{response}&rdquo;
-                        </p>
-                    )}
+                    <p className="font-headline text-center text-lg font-medium text-accent-foreground/90 w-full">
+                        &ldquo;{response}&rdquo;
+                    </p>
                 </CardFooter>
             </Card>
         )}
@@ -369,9 +329,6 @@ const Calculator = () => {
                 )
              })}
           </div>
-          <Button onClick={handleInteraction(handleRoast)} disabled={isRoastLoading || !canRoast} className="w-full mt-4 h-14 text-lg font-bold" variant="outline">
-            <Bot className="mr-2 h-6 w-6"/> {isRoastLoading ? 'Spilling the tea...' : 'Spill the AI Chai'}
-          </Button>
         </CardContent>
       </Card>
     </>

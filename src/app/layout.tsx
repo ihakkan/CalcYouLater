@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: 'CalcYouLater',
-  description: 'A calculator that roasts you.',
+  description: 'The calculator that roasts you. Install for the full experience!',
 };
 
 export default function RootLayout({
