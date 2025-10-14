@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 
 const InstallPrompt = () => {
   const [installPromptEvent, setInstallPromptEvent] = useState<Event | null>(null);
@@ -15,16 +15,14 @@ const InstallPrompt = () => {
       event.preventDefault();
       // Stash the event so it can be triggered later.
       setInstallPromptEvent(event);
-      // Show the custom install prompt.
-      setIsPromptVisible(true);
+      
+      // Only show the prompt if the app is not already installed.
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        setIsPromptVisible(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsPromptVisible(false);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -43,14 +41,17 @@ const InstallPrompt = () => {
       } else {
         console.log('User dismissed the install prompt');
       }
-      // We don't hide the prompt on dismissal, only on acceptance.
-      // This makes it more persistent.
-      setInstallPromptEvent(null);
+      // Hide the prompt regardless of the choice.
       setIsPromptVisible(false);
+      setInstallPromptEvent(null);
     });
   };
 
-  if (!isPromptVisible) {
+  const handleDismissClick = () => {
+    setIsPromptVisible(false);
+  }
+
+  if (!isPromptVisible || !installPromptEvent) {
     return null;
   }
 
@@ -64,8 +65,12 @@ const InstallPrompt = () => {
             <CardContent>
                 <p>Tired of our sass? Install the app so we can roast you anytime, anywhere. It's fast, works offline, and is probably smarter than your last calculation.</p>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <Button onClick={handleInstallClick} className="w-full">
+            <CardFooter className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={handleDismissClick}>
+                    <X className="mr-2 h-4 w-4" />
+                    Not Now
+                </Button>
+                <Button onClick={handleInstallClick}>
                     <Download className="mr-2 h-4 w-4" />
                     Install App
                 </Button>
