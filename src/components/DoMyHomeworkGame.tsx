@@ -29,7 +29,9 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
 
   useEffect(() => {
     setIsMounted(true);
-    synth.current = window.speechSynthesis;
+    if (typeof window !== 'undefined') {
+      synth.current = window.speechSynthesis;
+    }
   }, []);
 
   const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start') => {
@@ -156,7 +158,6 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       // Add new problems
       if (Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
-        // Ensure problems don't go off-screen. Max x is 80% to give buffer for problem width.
         setProblems(prev => [...prev, { ...newProblem, x: Math.random() * 80, y: 0, id: Date.now() }]);
         speak(newProblem.text);
       }
@@ -179,7 +180,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   }, [lives]);
   
   const startGame = () => {
-    if (!audioContext.current) {
+    if (typeof window !== 'undefined' && !audioContext.current) {
       audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     if (gameOver) {
@@ -194,11 +195,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   if (!isMounted) {
     return (
         <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
-            <CardHeader className="flex-row items-center justify-center text-center">
-                <CardTitle className="font-headline text-2xl text-white">Do My Homework</CardTitle>
+            <CardHeader className="flex-row items-center justify-center text-center p-4">
+                <CardTitle className="font-headline text-2xl" style={{color: 'white', textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>Do My Homework</CardTitle>
             </CardHeader>
              <CardContent className="h-full flex flex-col items-center justify-center">
-                <p>Loading Game...</p>
+                <p className="text-muted-foreground">Loading Game...</p>
             </CardContent>
         </Card>
     );
@@ -206,14 +207,16 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
 
   return (
     <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
-      <CardHeader className="flex-row items-center justify-between px-4">
+      <CardHeader className="flex-row items-center justify-between p-4" style={{backgroundColor: '#4a90e2', borderBottom: '4px solid #357ABD'}}>
         <div className="w-1/4">
              <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Back to Calculator">
                 <Calculator className="h-6 w-6 text-white" />
             </Button>
         </div>
         <div className="w-1/2 text-center">
-            <CardTitle className="font-headline text-2xl text-white">Do My Homework</CardTitle>
+            <CardTitle className="font-headline text-xl font-bold text-white whitespace-nowrap" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>
+                Do My Homework
+            </CardTitle>
         </div>
         <div className="w-1/4" />
       </CardHeader>
@@ -222,7 +225,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
           <span>Score: {score}</span>
            <div className={styles.lifeCounter}>
              <span className={styles.heartIcon}>❤️</span>
-             <span>{lives}</span>
+             <span className="font-bold text-lg">{lives}</span>
            </div>
           <span>Level: {level}</span>
         </div>
@@ -233,13 +236,13 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
                 <div>
                   <h2>Game Over!</h2>
                   <p>Final Score: {score}</p>
-                  <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white'}}>Play Again</Button>
+                  <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white', fontSize: '1.2rem', padding: '1rem 2rem'}}>Play Again</Button>
                 </div>
               ) : (
                 <div>
                     <h2>Falling Math!</h2>
                     <p>Solve the problems before they hit the bottom.</p>
-                    <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white'}}>Start Game</Button>
+                    <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white', fontSize: '1.2rem', padding: '1rem 2rem'}}>Start Game</Button>
                 </div>
               )}
             </div>
@@ -254,12 +257,13 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
           <Input
             ref={answerInputRef}
             type="number"
-            placeholder="Your answer"
+            placeholder="Your answer..."
             onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit()}
             disabled={!running}
             suppressHydrationWarning
+            style={{textAlign: 'center', fontSize: '1.1rem'}}
           />
-          <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white'}}>Enter</Button>
+          <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
         </div>
       </CardContent>
     </Card>
