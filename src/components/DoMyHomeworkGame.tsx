@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator } from 'lucide-react';
+import { Calculator, Volume2, VolumeX } from 'lucide-react';
 import styles from "./DoMyHomeworkGame.module.css";
 
 interface DoMyHomeworkGameProps {
@@ -20,6 +20,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   const [problems, setProblems] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<any[]>([]);
@@ -34,7 +35,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     }
   }, []);
 
-  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start') => {
+  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start' | 'pop') => {
     if (!audioContext.current) return;
     const context = audioContext.current;
     const o = context.createOscillator();
@@ -61,6 +62,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
         o.frequency.setValueAtTime(261.63, context.currentTime);
         g.gain.setValueAtTime(0.1, context.currentTime);
         g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
+    } else if (type === 'pop') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(1200, context.currentTime);
+      g.gain.setValueAtTime(0.1, context.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.1);
     }
 
     o.start(context.currentTime);
@@ -94,11 +100,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   }, [level]);
 
   const speak = useCallback((text: string) => {
-    if (!synth.current || !running) return;
+    if (!synth.current || !running || isMuted) return;
     const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by'));
     utterance.rate = 1.2;
     synth.current.speak(utterance);
-  }, [running]);
+  }, [running, isMuted]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -119,20 +125,18 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     let wasCorrect = false;
     let answeredId: number | null = null;
     
-    const remainingProblems = problems.filter(p => {
-        if (!wasCorrect && p.answer === userAnswer) {
-            wasCorrect = true;
-            answeredId = p.id;
-            // Mark for popping animation, but remove it from the next state
-            setProblems(currentProblems => currentProblems.map(cp => cp.id === p.id ? {...cp, popping: true} : cp));
-            return false; 
-        }
-        return true;
-    });
+    // Find the first problem that matches the answer
+    const problemToSolve = problems.find(p => p.answer === userAnswer);
 
-    if (wasCorrect) {
+    if (problemToSolve) {
+        wasCorrect = true;
+        answeredId = problemToSolve.id;
+        // Mark for popping animation, then remove it from the next state after animation
+        setProblems(currentProblems => currentProblems.map(cp => cp.id === answeredId ? {...cp, popping: true} : cp));
+        
+        playSound('pop');
         setScore(s => s + 10);
-        playSound('correct');
+        
         // Let the pop animation play, then remove the element
         setTimeout(() => {
             setProblems(currentProblems => currentProblems.filter(p => p.id !== answeredId));
@@ -225,21 +229,25 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
                 <Calculator className="h-6 w-6 text-white" />
             </Button>
         </div>
-        <div className="w-1/2 text-center">
+        <div className="w-auto text-center">
             <CardTitle className="font-headline text-xl font-bold text-white whitespace-nowrap" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>
                 Do My Homework
             </CardTitle>
         </div>
-        <div className="w-1/4" />
+        <div className="w-1/4 flex justify-end">
+            <Button variant="ghost" size="icon" onClick={() => setIsMuted(m => !m)} aria-label="Mute/Unmute TTS">
+              {isMuted ? <VolumeX className="h-6 w-6 text-white" /> : <Volume2 className="h-6 w-6 text-white" />}
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="h-full flex flex-col p-0">
         <div className={styles.stats}>
-          <span>Score: {score}</span>
+          <span className="text-yellow-300">Score: {score}</span>
            <div className={styles.lifeCounter}>
              <span className={styles.heartIcon}>❤️</span>
-             <span className="font-bold text-lg">{lives}</span>
+             <span className="font-bold text-lg text-white">{lives}</span>
            </div>
-          <span>Level: {level}</span>
+          <span className="text-green-300">Level: {level}</span>
         </div>
         <div ref={playfieldRef} className={styles.playfield}>
           {!running && (
@@ -281,3 +289,5 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     </Card>
   );
 };
+
+    
