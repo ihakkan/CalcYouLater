@@ -11,12 +11,20 @@ const InstallPrompt = () => {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
       event.preventDefault();
+      // Stash the event so it can be triggered later.
       setInstallPromptEvent(event);
+      // Show the custom install prompt.
       setIsPromptVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if the app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsPromptVisible(false);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -35,14 +43,12 @@ const InstallPrompt = () => {
       } else {
         console.log('User dismissed the install prompt');
       }
+      // We don't hide the prompt on dismissal, only on acceptance.
+      // This makes it more persistent.
       setInstallPromptEvent(null);
       setIsPromptVisible(false);
     });
   };
-
-  const handleDismissClick = () => {
-    setIsPromptVisible(false);
-  }
 
   if (!isPromptVisible) {
     return null;
@@ -59,8 +65,7 @@ const InstallPrompt = () => {
                 <p>Tired of our sass? Install the app so we can roast you anytime, anywhere. It's fast, works offline, and is probably smarter than your last calculation.</p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={handleDismissClick}>Not Now</Button>
-                <Button onClick={handleInstallClick}>
+                <Button onClick={handleInstallClick} className="w-full">
                     <Download className="mr-2 h-4 w-4" />
                     Install App
                 </Button>
