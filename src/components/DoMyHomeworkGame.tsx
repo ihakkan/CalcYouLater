@@ -125,22 +125,19 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   
   const handleAnswerSubmit = useCallback(() => {
     if (answerValue === "") return;
-    const userAnswer = parseInt(answerValue, 10);
+    const userAnswer = parseFloat(answerValue);
     if (isNaN(userAnswer)) return;
 
-    let answeredId: number | null = null;
-    
     const problemToSolve = problems.find(p => p.answer === userAnswer);
 
     if (problemToSolve) {
-        answeredId = problemToSolve.id;
-        setProblems(currentProblems => currentProblems.map(cp => cp.id === answeredId ? {...cp, popping: true} : cp));
+        setProblems(currentProblems => currentProblems.map(cp => cp.id === problemToSolve.id ? {...cp, popping: true} : cp));
         
         playSound('pop');
         setScore(s => s + 10);
         
         setTimeout(() => {
-            setProblems(currentProblems => currentProblems.filter(p => p.id !== answeredId));
+            setProblems(currentProblems => currentProblems.filter(p => p.id !== problemToSolve.id));
         }, 300);
     } else {
         playSound('incorrect');
@@ -150,21 +147,18 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     setAnswerValue("");
   }, [problems, playSound, answerValue]);
 
-  const handleNumberClick = (num: string) => {
+  const handleKeyClick = (key: string) => {
     playSound('click');
-    setAnswerValue(prev => prev + num);
+    if (key === 'del') {
+      setAnswerValue(prev => prev.slice(0, -1));
+    } else if (key === '.') {
+      if (!answerValue.includes('.')) {
+        setAnswerValue(prev => prev + key);
+      }
+    } else {
+      setAnswerValue(prev => prev + key);
+    }
   };
-
-  const handleBackspace = () => {
-    playSound('click');
-    setAnswerValue(prev => prev.slice(0, -1));
-  };
-  
-  const handleClear = () => {
-    playSound('click');
-    setAnswerValue("");
-  };
-
 
   useEffect(() => {
     if (!running || gameOver) return;
@@ -231,7 +225,8 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     );
   }
 
-  const keypadButtons = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const upperRowKeys = ['1', '2', '3', '4', '5'];
+  const lowerRowKeys = ['6', '7', '8', '9', '0'];
 
   return (
     <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
@@ -299,14 +294,19 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
           />
           <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
         </div>
-         <div className={styles.keypad}>
-            <Button variant="outline" className={styles.keypadKey} onClick={() => handleNumberClick('0')}>0</Button>
-            {keypadButtons.map(num => (
-                <Button key={num} variant="outline" className={styles.keypadKey} onClick={() => handleNumberClick(num)}>
-                {num}
-                </Button>
-            ))}
-            <Button variant="destructive" className={styles.keypadKey} onClick={handleBackspace}><Delete size={20}/></Button>
+        <div className={styles.keypad}>
+            <div className="grid grid-cols-6 gap-2">
+                {upperRowKeys.map(key => (
+                    <Button key={key} variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
+                ))}
+                <Button variant="destructive" className={styles.keypadKey} onClick={() => handleKeyClick('del')}><Delete size={20}/></Button>
+            </div>
+            <div className="grid grid-cols-6 gap-2 mt-2">
+                {lowerRowKeys.map(key => (
+                    <Button key={key} variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
+                ))}
+                <Button variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick('.')}>.</Button>
+            </div>
         </div>
       </CardContent>
     </Card>

@@ -114,9 +114,6 @@
 }
 
 .keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
     padding: 0.5rem;
     background-color: #dbeafc; /* Light Blue */
     border-top: 2px solid #90caf9;
