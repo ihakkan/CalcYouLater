@@ -43,9 +43,10 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     g.connect(context.destination);
 
     if (type === 'correct') {
-      o.frequency.setValueAtTime(800, context.currentTime);
-      g.gain.setValueAtTime(0.15, context.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
+      o.frequency.setValueAtTime(600, context.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.1);
+      g.gain.setValueAtTime(0.1, context.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.3);
     } else if (type === 'incorrect') {
       o.type = 'square';
       o.frequency.setValueAtTime(150, context.currentTime);
@@ -113,32 +114,38 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   const handleAnswerSubmit = useCallback(() => {
     if (!answerInputRef.current) return;
     const userAnswer = parseInt(answerInputRef.current.value, 10);
-    let correct = false;
+    if (isNaN(userAnswer)) return;
+
+    let wasCorrect = false;
     let answeredId: number | null = null;
-
-    setProblems(prev =>
-      prev.map(p => {
-        if (!correct && p.answer === userAnswer) {
-          setScore(s => s + 10);
-          correct = true;
-          answeredId = p.id;
-          return { ...p, popping: true };
+    
+    const remainingProblems = problems.filter(p => {
+        if (!wasCorrect && p.answer === userAnswer) {
+            wasCorrect = true;
+            answeredId = p.id;
+            // Mark for popping animation, but remove it from the next state
+            setProblems(currentProblems => currentProblems.map(cp => cp.id === p.id ? {...cp, popping: true} : cp));
+            return false; 
         }
-        return p;
-      })
-    );
+        return true;
+    });
 
-    if (correct) {
-      playSound('correct');
-      setTimeout(() => {
-        setProblems(prev => prev.filter(p => p.id !== answeredId));
-      }, 300); // Corresponds to animation duration
+    if (wasCorrect) {
+        setScore(s => s + 10);
+        playSound('correct');
+        // Let the pop animation play, then remove the element
+        setTimeout(() => {
+            setProblems(currentProblems => currentProblems.filter(p => p.id !== answeredId));
+        }, 300);
     } else {
-      playSound('incorrect');
-      setLives(l => Math.max(0, l - 1));
+        playSound('incorrect');
+        setLives(l => Math.max(0, l - 1));
     }
-    answerInputRef.current.value = '';
-  }, [playSound]);
+    
+    if (answerInputRef.current) {
+        answerInputRef.current.value = '';
+    }
+  }, [problems, playSound]);
 
 
   useEffect(() => {
