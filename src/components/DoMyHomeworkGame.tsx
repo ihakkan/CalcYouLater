@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Volume2, VolumeX, Delete, RefreshCw } from 'lucide-react';
+import { Calculator, Volume2, VolumeX, Delete, RefreshCw, Gamepad2 } from 'lucide-react';
 import styles from "./DoMyHomeworkGame.module.css";
 
 interface DoMyHomeworkGameProps {
