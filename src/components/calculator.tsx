@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Divide, Minus, Plus, X, Delete } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { easterEggJokes, getRandomJoke } from '@/lib/jokes';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import InstallPrompt from '@/components/install-prompt';
@@ -46,8 +45,6 @@ const Calculator = () => {
   const [operator, setOperator] = useState<Operator | null>(null);
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [expression, setExpression] = useState('');
-  const [response, setResponse] = useState<string | null>(null);
-  
   const [isFunnyResponse, setIsFunnyResponse] = useState(false);
   const [actualResult, setActualResult] = useState<number | null>(null);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -128,15 +125,6 @@ const Calculator = () => {
       default: return second;
     }
   };
-  
-  const checkAndSetResponse = (result: number) => {
-    if (isFunnyResponse) return;
-    if (easterEggJokes[result]) {
-      setResponse(easterEggJokes[result]);
-    } else {
-      setResponse(getRandomJoke());
-    }
-  }
 
   const handleOperatorInput = useCallback((nextOperator: Operator) => {
     if (isFunnyResponse) {
@@ -159,7 +147,6 @@ const Calculator = () => {
       setDisplayValue(resultString);
       setFirstOperand(result);
       setExpression(`${resultString} ${nextOperator} `);
-      checkAndSetResponse(result);
     }
 
     setWaitingForSecondOperand(true);
@@ -171,12 +158,10 @@ const Calculator = () => {
       setDisplayValue(String(actualResult));
       setExpression('');
       setFirstOperand(actualResult);
-      checkAndSetResponse(actualResult);
       setActualResult(null);
       setIsFunnyResponse(false);
       setOperator(null);
       setWaitingForSecondOperand(false);
-      setResponse(getRandomJoke());
       return;
     }
 
@@ -198,7 +183,6 @@ const Calculator = () => {
     if (Math.random() < 0.9) {
       const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
       setDisplayValue(funnyResponse);
-      setResponse("Tap '=' again to see the real answer.");
       setIsFunnyResponse(true);
       setActualResult(result);
       setExpression(expression + displayValue);
@@ -209,7 +193,6 @@ const Calculator = () => {
     setDisplayValue(resultString);
     setExpression('');
     setFirstOperand(null); 
-    checkAndSetResponse(result);
     setOperator(null);
     setWaitingForSecondOperand(false);
   }, [isFunnyResponse, actualResult, operator, firstOperand, waitingForSecondOperand, displayValue, expression, toast]);
@@ -221,7 +204,6 @@ const Calculator = () => {
     setFirstOperand(null);
     setOperator(null);
     setWaitingForSecondOperand(false);
-    setResponse(null);
     setIsFunnyResponse(false);
     setActualResult(null);
   }, [playClickSound]);
@@ -314,11 +296,11 @@ const Calculator = () => {
     <>
       <InstallPrompt />
       <div className="h-24 mb-4">
-        {response && (
+        {isFunnyResponse && (
             <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-90 duration-500 fill-mode-both bg-card border-primary">
                 <CardFooter className="p-3">
                     <p className="font-headline text-center text-lg font-medium text-primary w-full">
-                        &ldquo;{response}&rdquo;
+                        &ldquo;Tap '=' again to see the real answer.&rdquo;
                     </p>
                 </CardFooter>
             </Card>
