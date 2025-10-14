@@ -12,12 +12,33 @@ import InstallPrompt from '@/components/install-prompt';
 type Operator = '+' | '-' | '*' | '/';
 
 const funnyResponses = [
-  "Umm, 67? Maybe 89?",
-  "Hello World!",
-  "Try again, use your brain kid.",
-  "Do I look like I know?",
-  "42. The answer is always 42.",
+  "Bro idk 💀",
+  "Math? Nah fam.",
+  "Try harder 😂",
+  "42. Always 42.",
+  "Skill issue.",
+  "Ask Siri lol.",
+  "Nope 😏",
+  "Brain.exe failed.",
+  "Guess it yourself.",
+  "Close enough 👍",
+  "That’s illegal 💀",
+  "Error 404 math.",
+  "Touch grass 🌿",
+  "Too lazy rn 😴",
+  "Bro… really?",
+  "Try again, genius.",
+  "Not my problem 🤷‍♂️",
+  "Just vibe bro 🎶",
+  "You wish 😌",
+  "Nice try 😂",
+  "Wrong but confident!",
+  "Even Google gave up.",
+  "1+1=window 🪟",
+  "Math broke 💥",
+  "Ask your teacher 📚"
 ];
+
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
@@ -177,7 +198,7 @@ const Calculator = () => {
     if (Math.random() < 0.9) {
       const funnyResponse = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
       setDisplayValue(funnyResponse);
-      setResponse("Psst... tap '=' again to see the real answer.");
+      setResponse("Tap '=' again to see the real answer.");
       setIsFunnyResponse(true);
       setActualResult(result);
       setExpression(expression + displayValue);
