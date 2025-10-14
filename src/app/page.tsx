@@ -1,11 +1,21 @@
-import Calculator from '@/components/calculator';
+'use client';
+import { useState } from 'react';
+import { Calculator } from '@/components/calculator';
+import { DoMyHomeworkGame } from '@/components/DoMyHomeworkGame';
+import FlipContainer from '@/components/FlipContainer';
 
 export default function Home() {
+  const [isFlipped, setIsFlipped] = useState(false);
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-between bg-background p-4 antialiased">
       <div />
-      <div className="w-full max-w-sm">
-        <Calculator />
+      <div className="w-full max-w-sm h-[800px]">
+        <FlipContainer
+          isFlipped={isFlipped}
+          front={<Calculator onFlip={() => setIsFlipped(true)} />}
+          back={<DoMyHomeworkGame onFlip={() => setIsFlipped(false)} />}
+        />
       </div>
       <footer className="w-full text-center text-sm text-muted-foreground">
         Got a problem with the attitude? Complain to{' '}

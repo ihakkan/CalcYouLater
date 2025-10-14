@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Divide, Minus, Plus, X, Delete } from 'lucide-react';
+import { Divide, Minus, Plus, X, Delete, Brain } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
@@ -38,8 +38,11 @@ const funnyResponses = [
   "Ask your teacher 📚"
 ];
 
+interface CalculatorProps {
+  onFlip: () => void;
+}
 
-const Calculator = () => {
+export const Calculator: React.FC<CalculatorProps> = ({ onFlip }) => {
   const [displayValue, setDisplayValue] = useState('0');
   const [firstOperand, setFirstOperand] = useState<number | null>(null);
   const [operator, setOperator] = useState<Operator | null>(null);
@@ -308,9 +311,14 @@ const Calculator = () => {
       </div>
 
       <Card className="w-full max-w-sm overflow-hidden border-2 shadow-2xl shadow-primary/10">
-        <CardHeader className="pb-2">
-          <CardTitle className="font-headline text-primary">CalcYouLater</CardTitle>
-          <CardDescription>The calculator with an attitude.</CardDescription>
+        <CardHeader className="pb-2 flex-row items-center justify-between">
+            <div>
+                <CardTitle className="font-headline text-primary">CalcYouLater</CardTitle>
+                <CardDescription>The calculator with an attitude.</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Play Game">
+                <Brain className="h-6 w-6 text-accent" />
+            </Button>
         </CardHeader>
         <CardContent>
           <div className="mb-4 rounded-lg bg-muted p-4 text-right flex items-center justify-end h-[76px]">
@@ -339,5 +347,3 @@ const Calculator = () => {
     </>
   );
 };
-
-export default Calculator;

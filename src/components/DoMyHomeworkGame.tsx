@@ -1,0 +1,239 @@
+"use client";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calculator } from 'lucide-react';
+import styles from "./DoMyHomeworkGame.module.css";
+
+interface DoMyHomeworkGameProps {
+  onFlip: () => void;
+}
+
+export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) => {
+  const playfieldRef = useRef<HTMLDivElement>(null);
+  const answerInputRef = useRef<HTMLInputElement>(null);
+  
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(5);
+  const [level, setLevel] = useState(1);
+  const [running, setRunning] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  
+  const [problems, setProblems] = useState<any[]>([]);
+  const [powerUps, setPowerUps] = useState<any[]>([]);
+
+  const synth = (typeof window !== 'undefined') ? window.speechSynthesis : null;
+  const audioContext = useRef<AudioContext | null>(null);
+
+  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start') => {
+    if (!audioContext.current) return;
+    const context = audioContext.current;
+    const o = context.createOscillator();
+    const g = context.createGain();
+    o.connect(g);
+    g.connect(context.destination);
+
+    if (type === 'correct') {
+      o.frequency.setValueAtTime(523.25, context.currentTime);
+      g.gain.setValueAtTime(0.1, context.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.4);
+    } else if (type === 'incorrect') {
+      o.type = 'square';
+      o.frequency.setValueAtTime(150, context.currentTime);
+      g.gain.setValueAtTime(0.1, context.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.5);
+    } else if (type === 'powerup') {
+        o.frequency.setValueAtTime(600, context.currentTime);
+        o.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.2);
+        g.gain.setValueAtTime(0.1, context.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
+    } else if (type === 'start') {
+        o.frequency.setValueAtTime(261.63, context.currentTime);
+        g.gain.setValueAtTime(0.1, context.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
+    }
+
+    o.start(context.currentTime);
+    o.stop(context.currentTime + 0.5);
+  }, []);
+
+  const createProblem = useCallback(() => {
+    const operators = ['+', '-', '*', '/'];
+    let operator = operators[Math.floor(Math.random() * Math.min(level, 4))];
+    let a, b, answer;
+
+    if (operator === '+') {
+      a = Math.floor(Math.random() * (level * 10));
+      b = Math.floor(Math.random() * (level * 10));
+      answer = a + b;
+    } else if (operator === '-') {
+      a = Math.floor(Math.random() * (level * 10));
+      b = Math.floor(Math.random() * a); // ensure positive result
+      answer = a - b;
+    } else if (operator === '*') {
+      a = Math.floor(Math.random() * (level + 1)) + 1;
+      b = Math.floor(Math.random() * 9) + 1;
+      answer = a * b;
+    } else { // division
+      b = Math.floor(Math.random() * (level + 1)) + 1;
+      answer = Math.floor(Math.random() * 9) + 1;
+      a = b * answer;
+    }
+
+    return { a, b, operator, answer, text: `${a} ${operator} ${b}` };
+  }, [level]);
+
+  const speak = useCallback((text: string) => {
+    if (!synth || !running) return;
+    const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by'));
+    utterance.rate = 1.2;
+    synth.speak(utterance);
+  }, [synth, running]);
+
+  const resetGame = useCallback(() => {
+    setScore(0);
+    setLives(5);
+    setLevel(1);
+    setProblems([]);
+    setPowerUps([]);
+    setGameOver(false);
+    setRunning(true);
+    playSound('start');
+  }, [playSound]);
+  
+  const handleAnswerSubmit = useCallback(() => {
+    if (!answerInputRef.current) return;
+    const userAnswer = parseInt(answerInputRef.current.value, 10);
+    let correct = false;
+
+    setProblems(prev =>
+      prev.filter(p => {
+        if (p.answer === userAnswer) {
+          setScore(s => s + 10);
+          correct = true;
+          return false; // remove problem
+        }
+        return true;
+      })
+    );
+
+    if (correct) {
+      playSound('correct');
+    } else {
+      playSound('incorrect');
+      setLives(l => Math.max(0, l - 1));
+    }
+    answerInputRef.current.value = '';
+  }, [playSound]);
+
+
+  useEffect(() => {
+    if (!running || gameOver) return;
+
+    const gameLoop = setInterval(() => {
+      // Move problems down
+      setProblems(prev =>
+        prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => {
+          if (p.y > 100) {
+            setLives(l => Math.max(0, l - 1));
+            return false;
+          }
+          return true;
+        })
+      );
+      // Move powerups down
+      setPowerUps(prev =>
+        prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => p.y <= 100)
+      );
+
+      // Add new problems
+      if (Math.random() < 0.02 + level * 0.005) {
+        const newProblem = createProblem();
+        setProblems(prev => [...prev, { ...newProblem, x: Math.random() * 90, y: 0, id: Date.now() }]);
+        speak(newProblem.text);
+      }
+      
+      // Level up
+      if (score > level * 100) {
+        setLevel(l => l + 1);
+      }
+
+    }, 100);
+
+    return () => clearInterval(gameLoop);
+  }, [running, gameOver, createProblem, speak, score, level]);
+
+  useEffect(() => {
+    if (lives <= 0) {
+      setRunning(false);
+      setGameOver(true);
+    }
+  }, [lives]);
+  
+  const startGame = () => {
+    if (!audioContext.current) {
+      audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (gameOver) {
+      resetGame();
+    } else {
+      setRunning(true);
+      playSound('start');
+    }
+    answerInputRef.current?.focus();
+  };
+
+
+  return (
+    <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="font-headline text-primary">Do My Homework</CardTitle>
+        <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Back to Calculator">
+          <Calculator className="h-6 w-6 text-accent" />
+        </Button>
+      </CardHeader>
+      <CardContent className="h-full flex flex-col">
+        <div className={styles.stats}>
+          <span>Score: {score}</span>
+          <span>Lives: {'❤️'.repeat(lives)}</span>
+          <span>Level: {level}</span>
+        </div>
+        <div ref={playfieldRef} className={styles.playfield}>
+          {!running && (
+            <div className={styles.overlay}>
+              {gameOver ? (
+                <div>
+                  <h2>Game Over!</h2>
+                  <p>Final Score: {score}</p>
+                  <Button onClick={startGame}>Play Again</Button>
+                </div>
+              ) : (
+                <div>
+                    <h2>Falling Math!</h2>
+                    <p>Solve the problems before they hit the bottom.</p>
+                    <Button onClick={startGame}>Start Game</Button>
+                </div>
+              )}
+            </div>
+          )}
+          {problems.map(p => (
+            <div key={p.id} className={styles.problem} style={{ top: `${p.y}%`, left: `${p.x}%` }}>
+              {p.text}
+            </div>
+          ))}
+        </div>
+        <div className={styles.controls}>
+          <Input
+            ref={answerInputRef}
+            type="number"
+            placeholder="Your answer"
+            onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit()}
+            disabled={!running}
+          />
+          <Button onClick={handleAnswerSubmit} disabled={!running}>✔</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

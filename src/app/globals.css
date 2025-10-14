@@ -86,3 +86,31 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Flip Container Styles */
+.flip-container {
+  perspective: 1000px;
+  width: 100%;
+  height: 100%;
+}
+.flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s ease-in-out;
+  transform-style: preserve-3d;
+}
+.flip-container.flipped .flipper {
+  transform: rotateY(180deg);
+}
+.front,
+.back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.back {
+  transform: rotateY(180deg);
+}
