@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Divide, Minus, Plus, X, Delete, Brain } from 'lucide-react';
+import { Divide, Minus, Plus, X, Delete } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
@@ -317,7 +317,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ onFlip }) => {
                 <CardDescription>The calculator with an attitude.</CardDescription>
             </div>
             <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Play Game">
-                <Brain className="h-6 w-6 text-accent" />
+                <span className="text-2xl" role="img" aria-label="Game controller">🎮</span>
             </Button>
         </CardHeader>
         <CardContent>
