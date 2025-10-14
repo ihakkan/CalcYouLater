@@ -18,13 +18,21 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   const [lives, setLives] = useState(5);
   const [level, setLevel] = useState(1);
   const [running, setRunning] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
+  const [gameOver, setGameOver] = useState(true); // Start in a non-running state
+  const [isMounted, setIsMounted] = useState(false); // New state to track client-side mount
   
   const [problems, setProblems] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<any[]>([]);
 
-  const synth = (typeof window !== 'undefined') ? window.speechSynthesis : null;
+  // Defer initialization of browser-only APIs
+  const synth = useRef<SpeechSynthesis | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    // This effect runs only once on the client after the component mounts
+    setIsMounted(true);
+    synth.current = window.speechSynthesis;
+  }, []);
 
   const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start') => {
     if (!audioContext.current) return;
@@ -85,11 +93,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   }, [level]);
 
   const speak = useCallback((text: string) => {
-    if (!synth || !running) return;
+    if (!synth.current || !running) return;
     const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by'));
     utterance.rate = 1.2;
-    synth.speak(utterance);
-  }, [synth, running]);
+    synth.current.speak(utterance);
+  }, [running]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -184,6 +192,10 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     answerInputRef.current?.focus();
   };
 
+  // Render nothing on the server, and a "loading" state on the client initially
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
