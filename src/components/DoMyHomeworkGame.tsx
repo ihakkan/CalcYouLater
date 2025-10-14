@@ -212,6 +212,26 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     answerInputRef.current?.focus();
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!running) return;
+
+      if (event.key >= '0' && event.key <= '9') {
+        handleKeyClick(event.key);
+      } else if (event.key === '.') {
+        handleKeyClick('.');
+      } else if (event.key === 'Backspace') {
+        handleKeyClick('del');
+      } else if (event.key === 'Enter') {
+        handleAnswerSubmit();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [running, handleAnswerSubmit]);
+
   if (!isMounted) {
     return (
         <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
@@ -289,23 +309,22 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
             readOnly
             disabled={!running}
             suppressHydrationWarning
-            className="pointer-events-none"
-            style={{textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold'}}
+            className="pointer-events-none text-center text-xl font-bold bg-white/80"
           />
           <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
         </div>
         <div className={styles.keypad}>
             <div className="grid grid-cols-6 gap-2">
                 {upperRowKeys.map(key => (
-                    <Button key={key} variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
+                    <Button key={key} data-key-type="number" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
                 ))}
-                <Button variant="destructive" className={styles.keypadKey} onClick={() => handleKeyClick('del')}><Delete size={20}/></Button>
+                <Button data-key-type="delete" className={styles.keypadKey} onClick={() => handleKeyClick('del')}><Delete size={20}/></Button>
             </div>
             <div className="grid grid-cols-6 gap-2 mt-2">
                 {lowerRowKeys.map(key => (
-                    <Button key={key} variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
+                    <Button key={key} data-key-type="number" className={styles.keypadKey} onClick={() => handleKeyClick(key)}>{key}</Button>
                 ))}
-                <Button variant="outline" className={styles.keypadKey} onClick={() => handleKeyClick('.')}>.</Button>
+                <Button data-key-type="decimal" className={styles.keypadKey} onClick={() => handleKeyClick('.')}>.</Button>
             </div>
         </div>
       </CardContent>
