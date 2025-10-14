@@ -10,6 +10,23 @@ interface DoMyHomeworkGameProps {
   onFlip: () => void;
 }
 
+interface Problem {
+  text: string;
+  answer: number;
+  x: number;
+  y: number;
+  id: number;
+  popping: boolean;
+}
+
+interface PowerUp {
+  type: 'heart';
+  id: number;
+  x: number;
+  y: number;
+  popping: boolean;
+}
+
 export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) => {
   const playfieldRef = useRef<HTMLDivElement>(null);
   const answerInputRef = useRef<HTMLInputElement>(null);
@@ -21,9 +38,10 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   const [gameOver, setGameOver] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [showingLevelUp, setShowingLevelUp] = useState(false);
   
-  const [problems, setProblems] = useState<any[]>([]);
-  const [powerUps, setPowerUps] = useState<any[]>([]);
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [answerValue, setAnswerValue] = useState("");
 
   const synth = useRef<SpeechSynthesis | null>(null);
@@ -42,7 +60,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     const o = context.createOscillator();
     const g = context.createGain();
     o.connect(g);
-    g.connect(context.destination);
+g.connect(context.destination);
     g.gain.setValueAtTime(0.1, context.currentTime);
 
     if (type === 'correct') {
@@ -75,38 +93,88 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   }, []);
 
   const createProblem = useCallback(() => {
-    const operators = ['+', '-', '*', '/'];
-    let operator = operators[Math.floor(Math.random() * Math.min(level, 4))];
-    let a, b, answer;
+    let text: string;
+    let answer: number;
+    let a, b, c;
 
-    if (operator === '+') {
-      a = Math.floor(Math.random() * (level * 10));
-      b = Math.floor(Math.random() * (level * 10));
-      answer = a + b;
-    } else if (operator === '-') {
-      a = Math.floor(Math.random() * (level * 10));
-      b = Math.floor(Math.random() * a);
-      answer = a - b;
-    } else if (operator === '*') {
-      a = Math.floor(Math.random() * (level + 1)) + 1;
-      b = Math.floor(Math.random() * 9) + 1;
-      answer = a * b;
-    } else { // division
-      b = Math.floor(Math.random() * (level + 1)) + 1;
-      answer = Math.floor(Math.random() * 9) + 1;
-      a = b * answer;
+    const currentLevel = level > 10 ? 10 : level;
+
+    // Level 1-2: Basic addition/subtraction
+    if (currentLevel <= 2) {
+      const operator = Math.random() > 0.5 ? '+' : '-';
+      a = Math.floor(Math.random() * (currentLevel * 10)) + 1;
+      b = Math.floor(Math.random() * (currentLevel * 10)) + 1;
+      if (operator === '-') {
+        if (a < b) [a, b] = [b, a]; // ensure positive result
+        answer = a - b;
+      } else {
+        answer = a + b;
+      }
+      text = `${a} ${operator} ${b}`;
+    } 
+    // Level 3-4: Multiplication and simple division
+    else if (currentLevel <= 4) {
+      const operator = Math.random() > 0.5 ? '*' : '/';
+      if (operator === '*') {
+        a = Math.floor(Math.random() * 10) + 1;
+        b = Math.floor(Math.random() * (currentLevel * 2)) + 1;
+        answer = a * b;
+        text = `${a} × ${b}`;
+      } else {
+        b = Math.floor(Math.random() * 9) + 2;
+        answer = Math.floor(Math.random() * 9) + 2;
+        a = b * answer;
+        text = `${a} ÷ ${b}`;
+      }
     }
+    // Level 5-6: Decimal addition/subtraction
+    else if (currentLevel <= 6) {
+        const operator = Math.random() > 0.5 ? '+' : '-';
+        a = parseFloat((Math.random() * 20).toFixed(1));
+        b = parseFloat((Math.random() * 20).toFixed(1));
+        if (operator === '-') {
+            if (a < b) [a, b] = [b, a];
+            answer = parseFloat((a - b).toFixed(1));
+        } else {
+            answer = parseFloat((a + b).toFixed(1));
+        }
+        text = `${a} ${operator} ${b}`;
+    }
+    // Level 7-8: Problems with brackets
+    else if (currentLevel <= 8) {
+        a = Math.floor(Math.random() * 10) + 1;
+        b = Math.floor(Math.random() * 10) + 1;
+        c = Math.floor(Math.random() * 5) + 2;
+        const operator = Math.random() > 0.5 ? '+' : '-';
+        if(operator === '+') {
+          text = `(${a} + ${b}) × ${c}`;
+          answer = (a + b) * c;
+        } else {
+          if (a < b) [a, b] = [b, a];
+          text = `(${a} - ${b}) × ${c}`;
+          answer = (a - b) * c;
+        }
+    }
+    // Level 9-10: Simple algebra (find x)
+    else {
+        a = Math.floor(Math.random() * 10) + 1;
+        b = Math.floor(Math.random() * 10) + 2;
+        answer = Math.floor(Math.random() * 15) + 1; // This is 'x'
+        c = answer + b;
+        text = `x + ${b} = ${c}`;
+    }
+
     const playfield = playfieldRef.current;
     const problemWidth = 100;
     const maxPx = playfield ? playfield.clientWidth - problemWidth : 300;
     const x = Math.random() * maxPx;
 
-    return { a, b, operator, answer, text: `${a} ${operator} ${b}`, x, y: 0, id: Date.now(), popping: false };
+    return { text, answer, x, y: 0, id: Date.now(), popping: false };
   }, [level]);
 
   const speak = useCallback((text: string) => {
     if (!synth.current || !running || isMuted) return;
-    const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by'));
+    const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by').replace('x', 'ex'));
     utterance.rate = 1.2;
     synth.current.speak(utterance);
   }, [running, isMuted]);
@@ -118,9 +186,13 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     setProblems([]);
     setPowerUps([]);
     setGameOver(false);
-    setRunning(true);
+    setShowingLevelUp(true);
     playSound('start');
     setAnswerValue("");
+    setTimeout(() => {
+        setShowingLevelUp(false);
+        setRunning(true);
+    }, 1500);
   }, [playSound]);
   
   const handleAnswerSubmit = useCallback(() => {
@@ -160,12 +232,28 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     }
   };
 
+  const handlePowerUpClick = (powerUpId: number) => {
+    const powerUp = powerUps.find(p => p.id === powerUpId);
+    if (!powerUp) return;
+
+    if (powerUp.type === 'heart') {
+      setLives(l => l + 1);
+    }
+    
+    setPowerUps(currentPowerUps => currentPowerUps.map(p => p.id === powerUpId ? {...p, popping: true} : p));
+    playSound('powerup');
+    
+    setTimeout(() => {
+        setPowerUps(currentPowerUps => currentPowerUps.filter(p => p.id !== powerUpId));
+    }, 300);
+  }
+
   useEffect(() => {
-    if (!running || gameOver) return;
+    if (!running || gameOver || showingLevelUp) return;
 
     const gameLoop = setInterval(() => {
       setProblems(prev =>
-        prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => {
+        prev.map(p => ({ ...p, y: p.y + (1 + level * 0.05) })).filter(p => {
           if (p.y > 100 && !p.popping) {
             setLives(l => Math.max(0, l - 1));
             return false;
@@ -174,23 +262,46 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
         })
       );
       setPowerUps(prev =>
-        prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => p.y <= 100)
+        prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => {
+          if (p.y > 100 && !p.popping) {
+              return false;
+          }
+          return p.y <= 100;
+        })
       );
 
+      // Add new problem
       if (Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
         setProblems(prev => [...prev, newProblem]);
         speak(newProblem.text);
       }
-      
-      if (score > level * 100) {
-        setLevel(l => l + 1);
-      }
 
+      // Add new heart power-up
+      if (Math.random() < 0.005) { // Lower chance for hearts
+        const playfield = playfieldRef.current;
+        const maxPx = playfield ? playfield.clientWidth - 40 : 300;
+        const x = Math.random() * maxPx;
+        setPowerUps(prev => [...prev, {type: 'heart', id: Date.now(), x, y: 0, popping: false}]);
+      }
+      
     }, 100);
 
     return () => clearInterval(gameLoop);
-  }, [running, gameOver, createProblem, speak, score, level]);
+  }, [running, gameOver, createProblem, speak, score, level, showingLevelUp]);
+
+  // Level up logic
+  useEffect(() => {
+    if (score > 0 && score >= level * 100) {
+      setRunning(false);
+      setLevel(l => l + 1);
+      setShowingLevelUp(true);
+      setTimeout(() => {
+          setShowingLevelUp(false);
+          setRunning(true);
+      }, 1500);
+    }
+  }, [score, level]);
 
   useEffect(() => {
     if (lives <= 0) {
@@ -230,7 +341,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [running, handleAnswerSubmit]);
+  }, [running, handleAnswerSubmit, handleKeyClick]);
 
   if (!isMounted) {
     return (
@@ -277,13 +388,17 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
           <span className="text-green-300 font-bold">Level: {level}</span>
         </div>
         <div ref={playfieldRef} className={styles.playfield}>
-          {!running && (
+          {(gameOver || showingLevelUp) && (
             <div className={styles.overlay}>
               {gameOver ? (
                 <div>
                   <h2>Game Over!</h2>
                   <p>Final Score: {score}</p>
                   <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white', fontSize: '1.2rem', padding: '1rem 2rem'}}>Play Again</Button>
+                </div>
+              ) : showingLevelUp ? (
+                <div>
+                  <h2 className={styles.levelUpTitle}>Level {level}</h2>
                 </div>
               ) : (
                 <div>
@@ -299,6 +414,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
               {p.text}
             </div>
           ))}
+          {powerUps.map(p => (
+            <div key={p.id} onClick={() => handlePowerUpClick(p.id)} className={`${styles.powerUp} ${p.popping ? styles.popping : ''}`} style={{ top: `${p.y}%`, left: `${p.x}px` }}>
+              ❤️
+            </div>
+          ))}
         </div>
         <div className={styles.controls}>
           <Input
@@ -307,11 +427,11 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
             placeholder="Your answer..."
             value={answerValue}
             readOnly
-            disabled={!running}
+            disabled={!running || showingLevelUp}
             suppressHydrationWarning
             className="pointer-events-none text-center text-xl font-bold bg-white/80"
           />
-          <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
+          <Button onClick={handleAnswerSubmit} disabled={!running || showingLevelUp} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
         </div>
         <div className={styles.keypad}>
             <div className="grid grid-cols-6 gap-2">
