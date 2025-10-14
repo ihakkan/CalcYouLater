@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-between bg-background p-4 antialiased">
       <div />
-      <div className="w-full max-w-md h-[800px]">
+      <div className="w-full max-w-md h-[750px] sm:h-[800px]">
         <FlipContainer
           isFlipped={isFlipped}
           front={<Calculator onFlip={() => setIsFlipped(true)} />}

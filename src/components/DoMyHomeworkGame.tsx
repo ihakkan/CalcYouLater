@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Volume2, VolumeX } from 'lucide-react';
+import { Calculator, Volume2, VolumeX, Delete } from 'lucide-react';
 import styles from "./DoMyHomeworkGame.module.css";
 
 interface DoMyHomeworkGameProps {
@@ -24,6 +24,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
   
   const [problems, setProblems] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<any[]>([]);
+  const [answerValue, setAnswerValue] = useState("");
 
   const synth = useRef<SpeechSynthesis | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
@@ -35,38 +36,38 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     }
   }, []);
 
-  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start' | 'pop') => {
+  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start' | 'pop' | 'click') => {
     if (!audioContext.current) return;
     const context = audioContext.current;
     const o = context.createOscillator();
     const g = context.createGain();
     o.connect(g);
     g.connect(context.destination);
+    g.gain.setValueAtTime(0.1, context.currentTime);
 
     if (type === 'correct') {
       o.frequency.setValueAtTime(600, context.currentTime);
       o.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.1);
-      g.gain.setValueAtTime(0.1, context.currentTime);
       g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.3);
     } else if (type === 'incorrect') {
       o.type = 'square';
       o.frequency.setValueAtTime(150, context.currentTime);
-      g.gain.setValueAtTime(0.1, context.currentTime);
       g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.5);
     } else if (type === 'powerup') {
         o.frequency.setValueAtTime(600, context.currentTime);
         o.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.2);
-        g.gain.setValueAtTime(0.1, context.currentTime);
         g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
     } else if (type === 'start') {
         o.frequency.setValueAtTime(261.63, context.currentTime);
-        g.gain.setValueAtTime(0.1, context.currentTime);
         g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
     } else if (type === 'pop') {
       o.type = 'sine';
       o.frequency.setValueAtTime(1200, context.currentTime);
-      g.gain.setValueAtTime(0.1, context.currentTime);
       g.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.1);
+    } else if (type === 'click') {
+        o.type = 'sine';
+        o.frequency.setValueAtTime(440, context.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.1);
     }
 
     o.start(context.currentTime);
@@ -84,7 +85,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       answer = a + b;
     } else if (operator === '-') {
       a = Math.floor(Math.random() * (level * 10));
-      b = Math.floor(Math.random() * a); // ensure positive result
+      b = Math.floor(Math.random() * a);
       answer = a - b;
     } else if (operator === '*') {
       a = Math.floor(Math.random() * (level + 1)) + 1;
@@ -95,8 +96,12 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       answer = Math.floor(Math.random() * 9) + 1;
       a = b * answer;
     }
+    const playfield = playfieldRef.current;
+    const problemWidth = 100;
+    const maxPx = playfield ? playfield.clientWidth - problemWidth : 300;
+    const x = Math.random() * maxPx;
 
-    return { a, b, operator, answer, text: `${a} ${operator} ${b}` };
+    return { a, b, operator, answer, text: `${a} ${operator} ${b}`, x, y: 0, id: Date.now(), popping: false };
   }, [level]);
 
   const speak = useCallback((text: string) => {
@@ -115,29 +120,25 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     setGameOver(false);
     setRunning(true);
     playSound('start');
+    setAnswerValue("");
   }, [playSound]);
   
   const handleAnswerSubmit = useCallback(() => {
-    if (!answerInputRef.current) return;
-    const userAnswer = parseInt(answerInputRef.current.value, 10);
+    if (answerValue === "") return;
+    const userAnswer = parseInt(answerValue, 10);
     if (isNaN(userAnswer)) return;
 
-    let wasCorrect = false;
     let answeredId: number | null = null;
     
-    // Find the first problem that matches the answer
     const problemToSolve = problems.find(p => p.answer === userAnswer);
 
     if (problemToSolve) {
-        wasCorrect = true;
         answeredId = problemToSolve.id;
-        // Mark for popping animation, then remove it from the next state after animation
         setProblems(currentProblems => currentProblems.map(cp => cp.id === answeredId ? {...cp, popping: true} : cp));
         
         playSound('pop');
         setScore(s => s + 10);
         
-        // Let the pop animation play, then remove the element
         setTimeout(() => {
             setProblems(currentProblems => currentProblems.filter(p => p.id !== answeredId));
         }, 300);
@@ -146,17 +147,29 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
         setLives(l => Math.max(0, l - 1));
     }
     
-    if (answerInputRef.current) {
-        answerInputRef.current.value = '';
-    }
-  }, [problems, playSound]);
+    setAnswerValue("");
+  }, [problems, playSound, answerValue]);
+
+  const handleNumberClick = (num: string) => {
+    playSound('click');
+    setAnswerValue(prev => prev + num);
+  };
+
+  const handleBackspace = () => {
+    playSound('click');
+    setAnswerValue(prev => prev.slice(0, -1));
+  };
+  
+  const handleClear = () => {
+    playSound('click');
+    setAnswerValue("");
+  };
 
 
   useEffect(() => {
     if (!running || gameOver) return;
 
     const gameLoop = setInterval(() => {
-      // Move problems down
       setProblems(prev =>
         prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => {
           if (p.y > 100 && !p.popping) {
@@ -166,19 +179,16 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
           return true;
         })
       );
-      // Move powerups down
       setPowerUps(prev =>
         prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => p.y <= 100)
       );
 
-      // Add new problems
       if (Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
-        setProblems(prev => [...prev, { ...newProblem, x: Math.random() * 80, y: 0, id: Date.now(), popping: false }]);
+        setProblems(prev => [...prev, newProblem]);
         speak(newProblem.text);
       }
       
-      // Level up
       if (score > level * 100) {
         setLevel(l => l + 1);
       }
@@ -221,16 +231,18 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     );
   }
 
+  const keypadButtons = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
   return (
     <Card className={`w-full h-full overflow-hidden ${styles.gameContainer}`}>
-      <CardHeader className="flex-row items-center justify-between p-4" style={{backgroundColor: '#4a90e2', borderBottom: '4px solid #357ABD'}}>
+      <CardHeader className="flex-row items-center justify-between p-2 sm:p-4" style={{backgroundColor: '#4a90e2', borderBottom: '4px solid #357ABD'}}>
         <div className="w-1/4">
              <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Back to Calculator">
                 <Calculator className="h-6 w-6 text-white" />
             </Button>
         </div>
         <div className="w-auto text-center">
-            <CardTitle className="font-headline text-xl font-bold text-white whitespace-nowrap" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>
+            <CardTitle className="font-headline text-lg sm:text-xl font-bold text-white whitespace-nowrap" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>
                 Do My Homework
             </CardTitle>
         </div>
@@ -242,12 +254,12 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       </CardHeader>
       <CardContent className="h-full flex flex-col p-0">
         <div className={styles.stats}>
-          <span className="text-yellow-300">Score: {score}</span>
+          <span className="text-yellow-300 font-bold">Score: {score}</span>
            <div className={styles.lifeCounter}>
              <span className={styles.heartIcon}>❤️</span>
-             <span className="font-bold text-lg text-white">{lives}</span>
+             <span className="font-bold text-lg text-white drop-shadow-lg">{lives}</span>
            </div>
-          <span className="text-green-300">Level: {level}</span>
+          <span className="text-green-300 font-bold">Level: {level}</span>
         </div>
         <div ref={playfieldRef} className={styles.playfield}>
           {!running && (
@@ -268,7 +280,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
             </div>
           )}
           {problems.map(p => (
-            <div key={p.id} className={`${styles.problem} ${p.popping ? styles.popping : ''}`} style={{ top: `${p.y}%`, left: `${p.x}%` }}>
+            <div key={p.id} className={`${styles.problem} ${p.popping ? styles.popping : ''}`} style={{ top: `${p.y}%`, left: `${p.x}px` }}>
               {p.text}
             </div>
           ))}
@@ -276,18 +288,27 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
         <div className={styles.controls}>
           <Input
             ref={answerInputRef}
-            type="number"
+            type="text"
             placeholder="Your answer..."
-            onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit()}
+            value={answerValue}
+            readOnly
             disabled={!running}
             suppressHydrationWarning
-            style={{textAlign: 'center', fontSize: '1.1rem'}}
+            className="pointer-events-none"
+            style={{textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold'}}
           />
           <Button onClick={handleAnswerSubmit} disabled={!running} style={{backgroundColor: '#7ed321', color: 'white', fontWeight: 'bold', fontSize: '1.1rem'}}>Enter</Button>
+        </div>
+         <div className={styles.keypad}>
+            <Button variant="outline" className={styles.keypadKey} onClick={() => handleNumberClick('0')}>0</Button>
+            {keypadButtons.map(num => (
+                <Button key={num} variant="outline" className={styles.keypadKey} onClick={() => handleNumberClick(num)}>
+                {num}
+                </Button>
+            ))}
+            <Button variant="destructive" className={styles.keypadKey} onClick={handleBackspace}><Delete size={20}/></Button>
         </div>
       </CardContent>
     </Card>
   );
 };
-
-    
