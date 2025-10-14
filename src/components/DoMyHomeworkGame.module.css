@@ -101,9 +101,9 @@
 .overlay h2 {
     font-size: 3rem;
     font-weight: bold;
-    color: #4a90e2;
+    color: #e53e3e; /* Shiny Red */
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.15);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 0, 0, 0.6);
 }
 
 .overlay p {
