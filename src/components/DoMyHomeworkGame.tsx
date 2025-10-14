@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Volume2, VolumeX, Delete } from 'lucide-react';
+import { Calculator, Volume2, VolumeX, Delete, RefreshCw } from 'lucide-react';
 import styles from "./DoMyHomeworkGame.module.css";
 
 interface DoMyHomeworkGameProps {
@@ -46,6 +46,8 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
 
   const synth = useRef<SpeechSynthesis | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
+  const [showWinScreen, setShowWinScreen] = useState(false);
+  const [showProTip, setShowProTip] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -54,8 +56,8 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     }
   }, []);
 
-  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start' | 'pop' | 'click') => {
-    if (!audioContext.current) return;
+  const playSound = useCallback((type: 'correct' | 'incorrect' | 'powerup' | 'start' | 'pop' | 'click' | 'win') => {
+    if (isMuted || !audioContext.current) return;
     const context = audioContext.current;
     const o = context.createOscillator();
     const g = context.createGain();
@@ -86,11 +88,15 @@ g.connect(context.destination);
         o.type = 'sine';
         o.frequency.setValueAtTime(440, context.currentTime);
         g.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.1);
+    } else if (type === 'win') {
+        o.frequency.setValueAtTime(523.25, context.currentTime);
+        o.frequency.linearRampToValueAtTime(1046.50, context.currentTime + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.5);
     }
 
     o.start(context.currentTime);
     o.stop(context.currentTime + 0.5);
-  }, []);
+  }, [isMuted]);
 
   const createProblem = useCallback(() => {
     let text: string;
@@ -173,11 +179,11 @@ g.connect(context.destination);
   }, [level]);
 
   const speak = useCallback((text: string) => {
-    if (!synth.current || !running || isMuted) return;
+    if (!synth.current || !running || isMuted || !isMounted) return;
     const utterance = new SpeechSynthesisUtterance(text.replace('*', 'times').replace('/', 'divided by').replace('x', 'ex'));
     utterance.rate = 1.2;
     synth.current.speak(utterance);
-  }, [running, isMuted]);
+  }, [running, isMuted, isMounted]);
 
   const resetGame = useCallback(() => {
     setScore(0);
@@ -186,13 +192,18 @@ g.connect(context.destination);
     setProblems([]);
     setPowerUps([]);
     setGameOver(false);
-    setShowingLevelUp(true);
+    setShowWinScreen(false);
+    setShowProTip(true);
     playSound('start');
     setAnswerValue("");
     setTimeout(() => {
-        setShowingLevelUp(false);
-        setRunning(true);
-    }, 1500);
+        setShowProTip(false);
+        setShowingLevelUp(true);
+        setTimeout(() => {
+            setShowingLevelUp(false);
+            setRunning(true);
+        }, 1500);
+    }, 2500); // Show tip for 2.5 seconds
   }, [playSound]);
   
   const handleAnswerSubmit = useCallback(() => {
@@ -219,7 +230,7 @@ g.connect(context.destination);
     setAnswerValue("");
   }, [problems, playSound, answerValue]);
 
-  const handleKeyClick = (key: string) => {
+  const handleKeyClick = useCallback((key: string) => {
     playSound('click');
     if (key === 'del') {
       setAnswerValue(prev => prev.slice(0, -1));
@@ -230,7 +241,7 @@ g.connect(context.destination);
     } else {
       setAnswerValue(prev => prev + key);
     }
-  };
+  }, [playSound, answerValue]);
 
   const handlePowerUpClick = (powerUpId: number) => {
     const powerUp = powerUps.find(p => p.id === powerUpId);
@@ -249,7 +260,7 @@ g.connect(context.destination);
   }
 
   useEffect(() => {
-    if (!running || gameOver || showingLevelUp) return;
+    if (!running || gameOver || showingLevelUp || !isMounted) return;
 
     const gameLoop = setInterval(() => {
       setProblems(prev =>
@@ -270,13 +281,13 @@ g.connect(context.destination);
         })
       );
 
-      const maxProblems = level <= 4 ? 3 : level <= 7 ? 2 : 1;
+      const maxProblems = level < 5 ? 3 : 1;
 
       // Add new problem
       if (problems.length < maxProblems && Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
         setProblems(prev => [...prev, newProblem]);
-        speak(newProblem.text);
+        if(isMounted) speak(newProblem.text);
       }
 
       // Add new heart power-up
@@ -290,20 +301,26 @@ g.connect(context.destination);
     }, 100);
 
     return () => clearInterval(gameLoop);
-  }, [running, gameOver, createProblem, speak, score, level, showingLevelUp, problems.length]);
+  }, [running, gameOver, createProblem, speak, score, level, showingLevelUp, problems.length, isMounted]);
 
   // Level up logic
   useEffect(() => {
     if (score > 0 && score >= level * 100) {
-      setRunning(false);
-      setLevel(l => l + 1);
-      setShowingLevelUp(true);
-      setTimeout(() => {
-          setShowingLevelUp(false);
-          setRunning(true);
-      }, 1500);
+        if (level === 10) {
+            setRunning(false);
+            setShowWinScreen(true);
+            playSound('win');
+        } else {
+            setRunning(false);
+            setLevel(l => l + 1);
+            setShowingLevelUp(true);
+            setTimeout(() => {
+                setShowingLevelUp(false);
+                setRunning(true);
+            }, 1500);
+        }
     }
-  }, [score, level]);
+  }, [score, level, playSound]);
 
   useEffect(() => {
     if (lives <= 0) {
@@ -316,7 +333,7 @@ g.connect(context.destination);
     if (typeof window !== 'undefined' && !audioContext.current) {
       audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
-    if (gameOver) {
+    if (gameOver || showWinScreen) {
       resetGame();
     } else {
       setRunning(true);
@@ -366,6 +383,7 @@ g.connect(context.destination);
       <CardHeader className="flex-row items-center justify-between p-2 sm:p-4" style={{backgroundColor: '#4a90e2', borderBottom: '4px solid #357ABD'}}>
         <div className="w-1/4">
              <Button variant="ghost" size="icon" onClick={onFlip} aria-label="Back to Calculator">
+                <RefreshCw className="h-5 w-5 text-white mr-1" />
                 <Calculator className="h-6 w-6 text-white" />
             </Button>
         </div>
@@ -390,17 +408,28 @@ g.connect(context.destination);
           <span className="text-green-300 font-bold">Level: {level}</span>
         </div>
         <div ref={playfieldRef} className={styles.playfield}>
-          {(gameOver || showingLevelUp) && (
+          {(gameOver || showingLevelUp || showWinScreen || showProTip) && (
             <div className={styles.overlay}>
               {gameOver ? (
                 <div>
-                  <h2>Game Over!</h2>
+                  <h2 style={{color: '#e53e3e', textShadow: '0 0 5px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 0, 0, 0.6)'}}>Game Over!</h2>
                   <p>Final Score: {score}</p>
+                  <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white', fontSize: '1.2rem', padding: '1rem 2rem'}}>Play Again</Button>
+                </div>
+              ) : showWinScreen ? (
+                <div className="text-center">
+                  <h2 className={`${styles.levelUpTitle} text-yellow-400`} style={{animation: 'none'}}>🎉 You Win! 🎉</h2>
+                  <p className="my-4 text-lg font-bold">All levels completed! You beat this shitty game. You're a true king!</p>
                   <Button onClick={startGame} style={{backgroundColor: '#50e3c2', color: 'white', fontSize: '1.2rem', padding: '1rem 2rem'}}>Play Again</Button>
                 </div>
               ) : showingLevelUp ? (
                 <div>
                   <h2 className={styles.levelUpTitle}>Level {level}</h2>
+                </div>
+              ) : showProTip ? (
+                 <div>
+                    <h2 className="text-2xl font-bold text-blue-500 mb-2">Pro Tip:</h2>
+                    <p className="text-lg">Collect ❤️ by tapping them to increase lives!</p>
                 </div>
               ) : (
                 <div>
