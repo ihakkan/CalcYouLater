@@ -43,9 +43,9 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     g.connect(context.destination);
 
     if (type === 'correct') {
-      o.frequency.setValueAtTime(523.25, context.currentTime);
-      g.gain.setValueAtTime(0.1, context.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.4);
+      o.frequency.setValueAtTime(800, context.currentTime);
+      g.gain.setValueAtTime(0.15, context.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.2);
     } else if (type === 'incorrect') {
       o.type = 'square';
       o.frequency.setValueAtTime(150, context.currentTime);
@@ -114,20 +114,25 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
     if (!answerInputRef.current) return;
     const userAnswer = parseInt(answerInputRef.current.value, 10);
     let correct = false;
+    let answeredId: number | null = null;
 
     setProblems(prev =>
-      prev.filter(p => {
-        if (p.answer === userAnswer) {
+      prev.map(p => {
+        if (!correct && p.answer === userAnswer) {
           setScore(s => s + 10);
           correct = true;
-          return false; // remove problem
+          answeredId = p.id;
+          return { ...p, popping: true };
         }
-        return true;
+        return p;
       })
     );
 
     if (correct) {
       playSound('correct');
+      setTimeout(() => {
+        setProblems(prev => prev.filter(p => p.id !== answeredId));
+      }, 300); // Corresponds to animation duration
     } else {
       playSound('incorrect');
       setLives(l => Math.max(0, l - 1));
@@ -143,7 +148,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       // Move problems down
       setProblems(prev =>
         prev.map(p => ({ ...p, y: p.y + 1 })).filter(p => {
-          if (p.y > 100) {
+          if (p.y > 100 && !p.popping) {
             setLives(l => Math.max(0, l - 1));
             return false;
           }
@@ -158,7 +163,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
       // Add new problems
       if (Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
-        setProblems(prev => [...prev, { ...newProblem, x: Math.random() * 80, y: 0, id: Date.now() }]);
+        setProblems(prev => [...prev, { ...newProblem, x: Math.random() * 80, y: 0, id: Date.now(), popping: false }]);
         speak(newProblem.text);
       }
       
@@ -248,7 +253,7 @@ export const DoMyHomeworkGame: React.FC<DoMyHomeworkGameProps> = ({ onFlip }) =>
             </div>
           )}
           {problems.map(p => (
-            <div key={p.id} className={styles.problem} style={{ top: `${p.y}%`, left: `${p.x}%` }}>
+            <div key={p.id} className={`${styles.problem} ${p.popping ? styles.popping : ''}`} style={{ top: `${p.y}%`, left: `${p.x}%` }}>
               {p.text}
             </div>
           ))}
