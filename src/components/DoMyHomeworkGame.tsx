@@ -270,8 +270,10 @@ g.connect(context.destination);
         })
       );
 
+      const maxProblems = level <= 4 ? 3 : level <= 7 ? 2 : 1;
+
       // Add new problem
-      if (Math.random() < 0.02 + level * 0.005) {
+      if (problems.length < maxProblems && Math.random() < 0.02 + level * 0.005) {
         const newProblem = createProblem();
         setProblems(prev => [...prev, newProblem]);
         speak(newProblem.text);
@@ -288,7 +290,7 @@ g.connect(context.destination);
     }, 100);
 
     return () => clearInterval(gameLoop);
-  }, [running, gameOver, createProblem, speak, score, level, showingLevelUp]);
+  }, [running, gameOver, createProblem, speak, score, level, showingLevelUp, problems.length]);
 
   // Level up logic
   useEffect(() => {
